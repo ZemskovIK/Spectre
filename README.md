@@ -27,7 +27,7 @@
 
 
 
-## Authors
+## 💻 Авторы
 
 - [@ZemskovIK](https://www.github.com/ZemskovIK)
 - [@kudras3r](https://www.github.com/kudras3r)
