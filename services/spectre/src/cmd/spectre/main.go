@@ -7,7 +7,7 @@ import (
 
 const (
 	logLevel = "DEBUG"
-	dbPath   = "../db/spectre.db"
+	dbPath   = "../db/spec.db"
 )
 
 func main() {

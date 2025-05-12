@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS authors (
+    id SERIAL PRIMARY KEY,
+    fname VARCHAR(255) NOT NULL,
+    mname VARCHAR(255) NOT NULL,
+    lname VARCHAR(255) NOT NULL,
+);

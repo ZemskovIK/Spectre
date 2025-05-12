@@ -5,7 +5,7 @@ type Letter struct {
 	Author  string `json:"author"`
 	FoundAt string `json:"found_at"`
 	FoundIn string `json:"found_in"`
-	Subject string `json:"subject"`
+	Title   string `json:"title"`
 	Body    string `json:"body"`
 }
 

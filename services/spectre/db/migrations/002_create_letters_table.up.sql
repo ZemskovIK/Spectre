@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS letters (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL DEFAULT 'untitled',
+    body TEXT NOT NULL,
+    found_at TIMESTAMP NOT NULL,
+    found_in VARCHAR(255) NOT NULL,
+    author_id INT DEFAULT NULL,
+    FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL
+);
