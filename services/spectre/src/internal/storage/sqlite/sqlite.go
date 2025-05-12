@@ -2,9 +2,9 @@ package sqlite
 
 import (
 	"database/sql"
+	"spectre/internal/lib"
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"
-	"strings"
 )
 
 const (
@@ -87,35 +87,75 @@ func (s *sqliteDB) Save(letter st.Letter) error {
 
 func (s *sqliteDB) Delete(id int) error {
 	loc := GLOC + "Delete()"
-	s.log.Infof("%s: delete method called for id %d", loc, id)
+
+	query := `DELETE FROM letters WHERE id = ?`
+	result, err := s.db.Exec(query, id)
+	if err != nil {
+		s.log.Errorf("%s: error deleting letter with id %d: %v", loc, id, err)
+		return ErrCannotDeleteLetter(id, err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		s.log.Errorf("%s: error fetching rows affected for id %d: %v", loc, id, err)
+		return ErrCannotFetchRows(id, err)
+	}
+
+	if rowsAffected == 0 {
+		s.log.Warnf("%s: no letter found with id %d", loc, id)
+		return ErrLetterNotFound(id)
+	}
+
+	s.log.Infof("%s: successfully deleted letter with id %d", loc, id)
 	return nil
 }
 
 func (s *sqliteDB) GetAll() ([]st.Letter, error) {
 	loc := GLOC + "GetAll()"
-	s.log.Infof("%s: getAll method called", loc)
-	return nil, nil
-}
 
-func splitName(name string) (string, string, string) {
-	names := strings.Split(name, " ")
-	switch len(names) {
-	case 1:
-		return names[0], UNK_NAME, UNK_NAME
-	case 2:
-		return names[0], names[1], UNK_NAME
-	case 3:
-		return names[0], names[1], names[2]
-	default:
-		return names[0], names[1], strings.Join(names[2:], " ")
+	query := `SELECT l.id, l.title, l.body, l.found_at, l.found_in, 
+	          TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
+              FROM letters l
+              LEFT JOIN authors a ON l.author_id = a.id`
+	rows, err := s.db.Query(query)
+	if err != nil {
+		s.log.Errorf("%s: error executing query: %v", loc, err)
+		return nil, err
 	}
+	defer rows.Close()
+
+	var letters []st.Letter
+	for rows.Next() {
+		var letter st.Letter
+		err := rows.Scan(
+			&letter.ID,
+			&letter.Title,
+			&letter.Body,
+			&letter.FoundAt,
+			&letter.FoundIn,
+			&letter.Author,
+		)
+		if err != nil {
+			s.log.Errorf("%s: error scanning row: %v", loc, err)
+			return nil, err
+		}
+		letters = append(letters, letter)
+	}
+
+	if err = rows.Err(); err != nil {
+		s.log.Errorf("%s: error iterating rows: %v", loc, err)
+		return nil, err
+	}
+
+	s.log.Infof("%s: successfully retrieved %d letters", loc, len(letters))
+	return letters, nil
 }
 
 // getOrCreateAuthor checks if author exists in db, if not creates it
 func (s *sqliteDB) getOrCreateAuthor(name string) (int, error) {
 	loc := GLOC + "getOrCreateAuthor()"
 
-	var fname, mname, lname string = splitName(name)
+	var fname, mname, lname string = lib.SplitName(name)
 	var id int
 
 	query := `SELECT id, fname, mname, lname

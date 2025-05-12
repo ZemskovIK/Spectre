@@ -24,18 +24,18 @@ func setupTestDB(t *testing.T) *sql.DB {
 	_, err = db.Exec(`
         CREATE TABLE authors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fname TEXT,
-            mname TEXT,
-            lname TEXT
+            fname TEXT NOT NULL,
+            mname TEXT NOT NULL,
+            lname TEXT NOT NULL
         );
         CREATE TABLE letters (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            body TEXT,
-            found_at TEXT,
-            found_in TEXT,
-            author_id INTEGER,
-            FOREIGN KEY(author_id) REFERENCES authors(id)
+            title TEXT NOT NULL DEFAULT 'untitled',
+            body TEXT NOT NULL,
+            found_at TEXT NOT NULL,
+            found_in TEXT NOT NULL,
+            author_id INTEGER DEFAULT NULL,
+            FOREIGN KEY(author_id) REFERENCES authors(id) ON DELETE SET NULL
         );
     `)
 	if err != nil {
@@ -44,7 +44,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 
 	// Insert sample data
 	_, err = db.Exec(`
-        INSERT INTO authors (id, fname, mname, lname) VALUES (1, 'John', '', 'Doe');
+        INSERT INTO authors (id, fname, mname, lname) VALUES (1, 'John', 'Doe', '');
         INSERT INTO letters (id, title, body, found_at, found_in, author_id)
         VALUES (1, 'Sample Title', 'Sample Body', '2023-01-01', 'Sample Location', 1);
     `)
@@ -117,12 +117,12 @@ func TestGet_DatabaseError(t *testing.T) {
 	_, err = storage.db.Exec(`
         CREATE TABLE letters (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            body TEXT,
-            found_at TEXT,
-            found_in TEXT,
-            author_id INTEGER,
-            FOREIGN KEY(author_id) REFERENCES authors(id)
+            title TEXT NOT NULL DEFAULT 'untitled',
+            body TEXT NOT NULL,
+            found_at TEXT NOT NULL,
+            found_in TEXT NOT NULL,
+            author_id INTEGER DEFAULT NULL,
+            FOREIGN KEY(author_id) REFERENCES authors(id) ON DELETE SET NULL
         );
     `)
 	if err != nil {
@@ -142,7 +142,7 @@ func TestSave_SuccessfullySaveLetter(t *testing.T) {
 		Body:    "New Body",
 		FoundAt: "2025-05-12",
 		FoundIn: "New Location",
-		Author:  "JaneDoe",
+		Author:  "Jane Doe",
 	}
 
 	err := storage.Save(letter)
@@ -152,7 +152,8 @@ func TestSave_SuccessfullySaveLetter(t *testing.T) {
 
 	// Verify the letter was saved
 	var savedLetter st.Letter
-	query := `SELECT l.id, l.title, l.body, l.found_at, l.found_in, a.fname || a.mname || a.lname AS author
+	query := `SELECT l.id, l.title, l.body, l.found_at, l.found_in, 
+                     TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
               FROM letters l
               LEFT JOIN authors a ON l.author_id = a.id
               WHERE l.title = ? AND l.body = ?`
@@ -171,4 +172,113 @@ func TestSave_SuccessfullySaveLetter(t *testing.T) {
 	if savedLetter.Title != letter.Title || savedLetter.Body != letter.Body || savedLetter.Author != letter.Author {
 		t.Errorf("saved letter does not match: %+v", savedLetter)
 	}
+}
+
+func TestGetAll_SuccessfullyRetrieveAllLetters(t *testing.T) {
+	logger := logger.New("debug")
+	db := setupTestDB(t)
+	defer db.Close()
+
+	storage := &sqliteDB{db: db, log: logger}
+
+	// Добавляем авторов с разными форматами имен
+	_, err := db.Exec(`
+        INSERT INTO authors (id, fname, mname, lname) 
+        VALUES 
+            (2, 'Alice', 'Smith', ''),
+            (3, 'Bob', 'Michael', 'Asd'),
+            (4, 'Charlie', '', '');
+
+        INSERT INTO letters (id, title, body, found_at, found_in, author_id)
+        VALUES 
+            (2, 'Second Title', 'Second Body', '2025-05-12', 'Second Location', 2),
+            (3, 'Third Title', 'Third Body', '2025-05-13', 'Third Location', 3),
+            (4, 'Fourth Title', 'Fourth Body', '2025-05-14', 'Fourth Location', 4);
+    `)
+	if err != nil {
+		t.Fatalf("failed to insert additional authors and letters: %v", err)
+	}
+
+	// Вызываем метод GetAll
+	letters, err := storage.GetAll()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Проверяем количество полученных писем
+	if len(letters) != 4 {
+		t.Fatalf("expected 4 letters, got %d", len(letters))
+	}
+
+	// Проверяем содержимое писем
+	expectedLetters := []st.Letter{
+		{
+			ID:      1,
+			Title:   "Sample Title",
+			Body:    "Sample Body",
+			FoundAt: "2023-01-01",
+			FoundIn: "Sample Location",
+			Author:  "John Doe",
+		},
+		{
+			ID:      2,
+			Title:   "Second Title",
+			Body:    "Second Body",
+			FoundAt: "2025-05-12",
+			FoundIn: "Second Location",
+			Author:  "Alice Smith",
+		},
+		{
+			ID:      3,
+			Title:   "Third Title",
+			Body:    "Third Body",
+			FoundAt: "2025-05-13",
+			FoundIn: "Third Location",
+			Author:  "Bob Michael Asd",
+		},
+		{
+			ID:      4,
+			Title:   "Fourth Title",
+			Body:    "Fourth Body",
+			FoundAt: "2025-05-14",
+			FoundIn: "Fourth Location",
+			Author:  "Charlie",
+		},
+	}
+
+	for i, expected := range expectedLetters {
+		if letters[i] != expected {
+			t.Errorf("expected letter at index %d: %+v, got: %+v", i, expected, letters[i])
+		}
+	}
+}
+
+func TestDelete(t *testing.T) {
+	logger := logger.New("debug")
+	db := setupTestDB(t)
+	defer db.Close()
+
+	storage := &sqliteDB{db: db, log: logger}
+
+	t.Run("successfully delete an existing letter", func(t *testing.T) {
+		// Удаляем существующее письмо
+		err := storage.Delete(1)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Проверяем, что письмо удалено
+		_, err = storage.Get(1)
+		if err.Error() != ErrLetterNotFound(1).Error() {
+			t.Errorf("expected ErrLetterNotFound, got: %v", err)
+		}
+	})
+
+	t.Run("delete a non-existing letter", func(t *testing.T) {
+		// Пытаемся удалить несуществующее письмо
+		err := storage.Delete(999)
+		if err.Error() != ErrLetterNotFound(999).Error() {
+			t.Errorf("expected ErrLetterNotFound, got: %v", err)
+		}
+	})
 }

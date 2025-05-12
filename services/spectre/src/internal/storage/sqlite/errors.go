@@ -12,6 +12,12 @@ var (
 	ErrCannotGetLetter = func(id int, err error) error {
 		return fmt.Errorf("cannot get letter with id %d: %v", id, err)
 	}
+	ErrCannotDeleteLetter = func(id int, err error) error {
+		return fmt.Errorf("cannot delete letter with id %d: %w", id, err)
+	}
+	ErrCannotFetchRows = func(id int, err error) error {
+		return fmt.Errorf("cannot fetch rows affected for id %d: %w", id, err)
+	}
 	ErrWnenFetchAuthor = func(name string, err error) error {
 		return fmt.Errorf("cannot fetch author %s: %v", name, err)
 	}
