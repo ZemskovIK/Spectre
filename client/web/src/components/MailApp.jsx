@@ -7,6 +7,8 @@ export default function MailApp() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [author, setAuthor] = useState("");
+  const [foundIn, setFoundIn] = useState("");
+  const [dataInt, setDataInt] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -14,7 +16,7 @@ export default function MailApp() {
 
   useEffect(() => {
     fetchMessages();
-  }, []);
+  }, [messages]);
 
   const fetchMessages = async () => {
     try {
@@ -29,10 +31,10 @@ export default function MailApp() {
     setDeletingId(id);
     try {
       await axios.delete(`http://localhost:5000/messages/${id}`);
-      setMessages(messages.filter((msg) => msg.id !== id));
     } catch (error) {
       console.error("ошибка удаления:", error);
     } finally {
+      setMessages(messages.filter((msg) => msg.id !== id));
       setDeletingId(null);
     }
   };
@@ -46,11 +48,15 @@ export default function MailApp() {
       const response = await axios.post("http://localhost:5000/messages", {
         text: newMessage,
         author: author.trim(),
+        dataInt: dataInt.trim(),
+        foundIn: foundIn.trim(),
         // id2: "1",
       });
       setMessages([...messages, response.data]);
       setNewMessage("");
       setAuthor("");
+      setDataInt("");
+      setFoundIn("");
     } catch (error) {
       console.error("ошибка отправки:", error);
     } finally {
@@ -80,23 +86,60 @@ export default function MailApp() {
       <div className="max-w-6xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold mb-4">Добавить новое письмо</h2>
         <form onSubmit={sendMessage} className="space-y-4" autocomplete="off">
-          <div className="">
-            <label
-              htmlFor="author"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Автор
-            </label>
-            <input
-              id="author"
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder="автор"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+          <div className="flex space-x-4">
+            <div className="flex flex-col w-full">
+              <label
+                htmlFor="author"
+                className=" text-sm font-medium text-gray-700 mb-1"
+              >
+                Автор
+              </label>
+              <input
+                id="author"
+                type="text"
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                placeholder="автор"
+                className="block px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div className="flex flex-col">
+              <label
+                htmlFor="найдено"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                найдено
+              </label>
+              <input
+                id="author"
+                type="text"
+                value={foundIn}
+                onChange={(e) => setFoundIn(e.target.value)}
+                placeholder="найдено"
+                className="block px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div className="flex flex-col">
+              <label
+                htmlFor="дата"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                дата
+              </label>
+              <input
+                id="author"
+                type="text"
+                value={dataInt}
+                onChange={(e) => setDataInt(e.target.value)}
+                placeholder="дата"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
           </div>
+
           <div>
             <label
               htmlFor="письмо"
@@ -131,7 +174,9 @@ export default function MailApp() {
       {showModal && (
         <ModalWindow
           onClose={() => setShowModal(false)}
+          dataInt={selectedMessage.dataInt}
           title={selectedMessage.author}
+          foundIn={selectedMessage.foundIn}
           text={selectedMessage.text}
           backgroundImage="https://static.vecteezy.com/system/resources/previews/032/048/239/non_2x/paper-vintage-background-recycle-brown-paper-crumpled-texture-ai-generated-free-photo.jpg"
         ></ModalWindow>

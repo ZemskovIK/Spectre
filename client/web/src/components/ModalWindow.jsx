@@ -1,8 +1,15 @@
 import React from "react";
-import PropTypes from "prop-types";
 import "./Modal.css";
 
-const Modal = ({ title, text, onClose, backgroundImage }) => {
+
+export default function Modal({
+  title,
+  text,
+  onClose,
+  backgroundImage,
+  foundIn,
+  dataInt,
+}) {
   return (
     <>
       <div className="modal-blur-overlay" />
@@ -14,8 +21,11 @@ const Modal = ({ title, text, onClose, backgroundImage }) => {
         />
 
         <div className="modal-content">
-          <button className="close-button" onClick={onClose}>
-            ×
+          <button
+            className="close-button hover:scale-120 transition-transform duration-200"
+            onClick={onClose}
+          >
+            &#10006;
           </button>
 
           <div className="modal-header">
@@ -25,19 +35,20 @@ const Modal = ({ title, text, onClose, backgroundImage }) => {
 
           <div className="modal-body">
             {" "}
+            <div className="">
+              {" "}
+              <h2 className="modal-found">Найдено: {foundIn}</h2>
+            </div>
+            <br></br>
+            <div className="">
+              {" "}
+              <h2 className="modal-found">Дата: {dataInt}</h2>
+            </div>
+            <br></br>
             <p className="modal-text">{text}</p>
           </div>
         </div>
       </div>
     </>
   );
-};
-
-Modal.propTypes = {
-  title: PropTypes.string.isRequired,
-  text: PropTypes.string.isRequired,
-  onClose: PropTypes.func.isRequired,
-  backgroundImage: PropTypes.string.isRequired,
-};
-
-export default Modal;
+}
