@@ -1,6 +1,6 @@
 # фронт для сервиса шифрования писем военных лет Спектр
 
-![](https://github.com/ZemskovIK/Spectre/blob/main/Client/web/public/spectre.png)
+![](https://github.com/ZemskovIK/Spectre/blob/main/client/web/public/spectre.png)
 
 ## Описание проекта
 
