@@ -3,28 +3,28 @@ package sqlite
 import "fmt"
 
 var (
-	ErrCannotConnectSQLite = func(loc string, err error) error {
+	errCannotConnectSQLite = func(loc string, err error) error {
 		return fmt.Errorf("cannot connect to SQLite db at %s: %v", loc, err)
 	}
-	ErrLetterNotFound = func(id int) error {
+	errLetterNotFound = func(id int) error {
 		return fmt.Errorf("letter with id %d not found", id)
 	}
-	ErrCannotGetLetter = func(id int, err error) error {
+	errCannotGetLetter = func(id int, err error) error {
 		return fmt.Errorf("cannot get letter with id %d: %v", id, err)
 	}
-	ErrCannotDeleteLetter = func(id int, err error) error {
+	errCannotDeleteLetter = func(id int, err error) error {
 		return fmt.Errorf("cannot delete letter with id %d: %w", id, err)
 	}
-	ErrCannotFetchRows = func(id int, err error) error {
+	errCannotFetchRows = func(id int, err error) error {
 		return fmt.Errorf("cannot fetch rows affected for id %d: %w", id, err)
 	}
-	ErrWnenFetchAuthor = func(name string, err error) error {
+	errWnenFetchAuthor = func(name string, err error) error {
 		return fmt.Errorf("cannot fetch author %s: %v", name, err)
 	}
-	ErrWhenAddingAuthor = func(name string, err error) error {
+	errWhenAddingAuthor = func(name string, err error) error {
 		return fmt.Errorf("cannot add author %s: %v", name, err)
 	}
-	ErrWhenAddingLetter = func(title string, err error) error {
+	errWhenAddingLetter = func(title string, err error) error {
 		return fmt.Errorf("cannot add letter with title %s: %v", title, err)
 	}
 )

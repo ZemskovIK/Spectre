@@ -5,6 +5,8 @@ import (
 	"spectre/internal/lib"
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -18,15 +20,18 @@ type sqliteDB struct {
 	log *logger.Logger
 }
 
-func New(dbPath string) (st.LettersStorage, error) {
+func New(dbPath string, log *logger.Logger) (st.LettersStorage, error) {
 	loc := GLOC + "New()"
 
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		return nil, ErrCannotConnectSQLite(loc, err)
+		return nil, errCannotConnectSQLite(loc, err)
 	}
 
-	return &sqliteDB{db: db}, nil
+	return &sqliteDB{
+		db:  db,
+		log: log,
+	}, nil
 }
 
 // Get retrieves a letter by id from db
@@ -48,10 +53,10 @@ func (s *sqliteDB) Get(id int) (st.Letter, error) {
 	); err != nil {
 		if err == sql.ErrNoRows {
 			s.log.Warnf("%s: letter not found with id %d", loc, id)
-			return st.Letter{}, ErrLetterNotFound(id)
+			return st.Letter{}, errLetterNotFound(id)
 		}
 		s.log.Errorf("%s: error retrieving letter with id %d: %v", loc, id, err)
-		return st.Letter{}, ErrCannotGetLetter(id, err)
+		return st.Letter{}, errCannotGetLetter(id, err)
 	}
 
 	s.log.Infof("%s: successfully retrieved letter with id %d", loc, id)
@@ -78,7 +83,7 @@ func (s *sqliteDB) Save(letter st.Letter) error {
 		aID)
 	if err != nil {
 		s.log.Errorf("%s: error adding letter '%s': %v", loc, letter.Title, err)
-		return ErrWhenAddingLetter(letter.Title, err)
+		return errWhenAddingLetter(letter.Title, err)
 	}
 
 	s.log.Infof("%s: successfully saved letter '%s'", loc, letter.Title)
@@ -92,18 +97,18 @@ func (s *sqliteDB) Delete(id int) error {
 	result, err := s.db.Exec(query, id)
 	if err != nil {
 		s.log.Errorf("%s: error deleting letter with id %d: %v", loc, id, err)
-		return ErrCannotDeleteLetter(id, err)
+		return errCannotDeleteLetter(id, err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		s.log.Errorf("%s: error fetching rows affected for id %d: %v", loc, id, err)
-		return ErrCannotFetchRows(id, err)
+		return errCannotFetchRows(id, err)
 	}
 
 	if rowsAffected == 0 {
 		s.log.Warnf("%s: no letter found with id %d", loc, id)
-		return ErrLetterNotFound(id)
+		return errLetterNotFound(id)
 	}
 
 	s.log.Infof("%s: successfully deleted letter with id %d", loc, id)
@@ -171,7 +176,7 @@ func (s *sqliteDB) getOrCreateAuthor(name string) (int, error) {
 		return id, nil
 	} else if err != sql.ErrNoRows {
 		s.log.Errorf("%s: error fetching author '%s': %v", loc, name, err)
-		return -1, ErrWnenFetchAuthor(name, err)
+		return -1, errWnenFetchAuthor(name, err)
 	}
 
 	query = `INSERT INTO authors (fname, mname, lname)
@@ -179,7 +184,7 @@ func (s *sqliteDB) getOrCreateAuthor(name string) (int, error) {
 	res, err := s.db.Exec(query, fname, mname, lname)
 	if err != nil {
 		s.log.Errorf("%s: error adding author '%s': %v", loc, name, err)
-		return -1, ErrWhenAddingAuthor(name, err)
+		return -1, errWhenAddingAuthor(name, err)
 	}
 
 	uid, err := res.LastInsertId()

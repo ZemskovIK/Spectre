@@ -84,7 +84,7 @@ func TestGet_LetterNotFound(t *testing.T) {
 		t.Fatal("expected an error, got nil")
 	}
 
-	expectedErr := ErrLetterNotFound(999)
+	expectedErr := errLetterNotFound(999)
 	if err.Error() != expectedErr.Error() {
 		t.Errorf("expected error: %q, got: %q", expectedErr.Error(), err.Error())
 	}
@@ -269,7 +269,7 @@ func TestDelete(t *testing.T) {
 
 		// Проверяем, что письмо удалено
 		_, err = storage.Get(1)
-		if err.Error() != ErrLetterNotFound(1).Error() {
+		if err.Error() != errLetterNotFound(1).Error() {
 			t.Errorf("expected ErrLetterNotFound, got: %v", err)
 		}
 	})
@@ -277,7 +277,7 @@ func TestDelete(t *testing.T) {
 	t.Run("delete a non-existing letter", func(t *testing.T) {
 		// Пытаемся удалить несуществующее письмо
 		err := storage.Delete(999)
-		if err.Error() != ErrLetterNotFound(999).Error() {
+		if err.Error() != errLetterNotFound(999).Error() {
 			t.Errorf("expected ErrLetterNotFound, got: %v", err)
 		}
 	})
