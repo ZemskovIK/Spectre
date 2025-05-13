@@ -61,7 +61,7 @@ func main() {
 
 func actionIsValid(action string) bool {
 	switch action {
-	case "up", "down":
+	case "up", "down", "force":
 		return true
 	default:
 		return false

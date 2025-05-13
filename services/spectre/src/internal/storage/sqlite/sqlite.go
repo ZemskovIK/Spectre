@@ -38,7 +38,7 @@ func New(dbPath string, log *logger.Logger) (st.LettersStorage, error) {
 func (s *sqliteDB) Get(id int) (st.Letter, error) {
 	loc := GLOC + "Get()"
 
-	query := `SELECT l.id, l.body, l.found_at, l.found_in, l.title
+	query := `SELECT l.id, l.body, l.found_at, l.found_in
               FROM letters l
               LEFT JOIN authors a ON l.author_id = a.id
               WHERE l.id = ?`
@@ -49,7 +49,6 @@ func (s *sqliteDB) Get(id int) (st.Letter, error) {
 		&letter.Body,
 		&letter.FoundAt,
 		&letter.FoundIn,
-		&letter.Title,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			s.log.Warnf("%s: letter not found with id %d", loc, id)
@@ -73,20 +72,19 @@ func (s *sqliteDB) Save(letter st.Letter) error {
 		return err
 	}
 
-	query := `INSERT INTO letters (title, body, found_at, found_in, author_id)
-	          VALUES (?, ?, ?, ?, ?)`
+	query := `INSERT INTO letters (body, found_at, found_in, author_id)
+	          VALUES (?, ?, ?, ?)`
 	_, err = s.db.Exec(query,
-		letter.Title,
 		letter.Body,
 		letter.FoundAt,
 		letter.FoundIn,
 		aID)
 	if err != nil {
-		s.log.Errorf("%s: error adding letter '%s': %v", loc, letter.Title, err)
-		return errWhenAddingLetter(letter.Title, err)
+		s.log.Errorf("%s: error adding letter: %v", loc, err)
+		return errWhenAddingLetter(letter.Body[:len(letter.Body)%10], err)
 	}
 
-	s.log.Infof("%s: successfully saved letter '%s'", loc, letter.Title)
+	s.log.Infof("%s: successfully saved letter", loc)
 	return nil
 }
 
@@ -118,7 +116,7 @@ func (s *sqliteDB) Delete(id int) error {
 func (s *sqliteDB) GetAll() ([]st.Letter, error) {
 	loc := GLOC + "GetAll()"
 
-	query := `SELECT l.id, l.title, l.body, l.found_at, l.found_in, 
+	query := `SELECT l.id, l.body, l.found_at, l.found_in, 
 	          TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
               FROM letters l
               LEFT JOIN authors a ON l.author_id = a.id`
@@ -134,7 +132,6 @@ func (s *sqliteDB) GetAll() ([]st.Letter, error) {
 		var letter st.Letter
 		err := rows.Scan(
 			&letter.ID,
-			&letter.Title,
 			&letter.Body,
 			&letter.FoundAt,
 			&letter.FoundIn,

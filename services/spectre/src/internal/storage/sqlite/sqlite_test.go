@@ -30,7 +30,6 @@ func setupTestDB(t *testing.T) *sql.DB {
         );
         CREATE TABLE letters (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL DEFAULT 'untitled',
             body TEXT NOT NULL,
             found_at TEXT NOT NULL,
             found_in TEXT NOT NULL,
@@ -45,8 +44,8 @@ func setupTestDB(t *testing.T) *sql.DB {
 	// Insert sample data
 	_, err = db.Exec(`
         INSERT INTO authors (id, fname, mname, lname) VALUES (1, 'John', 'Doe', '');
-        INSERT INTO letters (id, title, body, found_at, found_in, author_id)
-        VALUES (1, 'Sample Title', 'Sample Body', '2023-01-01', 'Sample Location', 1);
+        INSERT INTO letters (id, body, found_at, found_in, author_id)
+        VALUES (1, 'Sample Body', '2023-01-01', 'Sample Location', 1);
     `)
 	if err != nil {
 		t.Fatalf("failed to insert sample data: %v", err)
@@ -67,7 +66,7 @@ func TestGet_SuccessfullyRetrieveLetter(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if letter.ID != 1 || letter.Title != "Sample Title" || letter.Body != "Sample Body" {
+	if letter.ID != 1 || letter.Body != "Sample Body" {
 		t.Errorf("unexpected letter: %+v", letter)
 	}
 }
@@ -117,7 +116,6 @@ func TestGet_DatabaseError(t *testing.T) {
 	_, err = storage.db.Exec(`
         CREATE TABLE letters (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL DEFAULT 'untitled',
             body TEXT NOT NULL,
             found_at TEXT NOT NULL,
             found_in TEXT NOT NULL,
@@ -138,7 +136,6 @@ func TestSave_SuccessfullySaveLetter(t *testing.T) {
 	storage := &sqliteDB{db: db, log: logger}
 
 	letter := st.Letter{
-		Title:   "New Title",
 		Body:    "New Body",
 		FoundAt: "2025-05-12",
 		FoundIn: "New Location",
@@ -152,14 +149,13 @@ func TestSave_SuccessfullySaveLetter(t *testing.T) {
 
 	// Verify the letter was saved
 	var savedLetter st.Letter
-	query := `SELECT l.id, l.title, l.body, l.found_at, l.found_in, 
+	query := `SELECT l.id, l.body, l.found_at, l.found_in, 
                      TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
               FROM letters l
               LEFT JOIN authors a ON l.author_id = a.id
-              WHERE l.title = ? AND l.body = ?`
-	err = db.QueryRow(query, letter.Title, letter.Body).Scan(
+              WHERE l.body = ?`
+	err = db.QueryRow(query, letter.Body).Scan(
 		&savedLetter.ID,
-		&savedLetter.Title,
 		&savedLetter.Body,
 		&savedLetter.FoundAt,
 		&savedLetter.FoundIn,
@@ -169,7 +165,7 @@ func TestSave_SuccessfullySaveLetter(t *testing.T) {
 		t.Fatalf("failed to retrieve saved letter: %v", err)
 	}
 
-	if savedLetter.Title != letter.Title || savedLetter.Body != letter.Body || savedLetter.Author != letter.Author {
+	if savedLetter.Body != letter.Body || savedLetter.Author != letter.Author {
 		t.Errorf("saved letter does not match: %+v", savedLetter)
 	}
 }
@@ -189,11 +185,11 @@ func TestGetAll_SuccessfullyRetrieveAllLetters(t *testing.T) {
             (3, 'Bob', 'Michael', 'Asd'),
             (4, 'Charlie', '', '');
 
-        INSERT INTO letters (id, title, body, found_at, found_in, author_id)
+        INSERT INTO letters (id, body, found_at, found_in, author_id)
         VALUES 
-            (2, 'Second Title', 'Second Body', '2025-05-12', 'Second Location', 2),
-            (3, 'Third Title', 'Third Body', '2025-05-13', 'Third Location', 3),
-            (4, 'Fourth Title', 'Fourth Body', '2025-05-14', 'Fourth Location', 4);
+            (2, 'Second Body', '2025-05-12', 'Second Location', 2),
+            (3, 'Third Body', '2025-05-13', 'Third Location', 3),
+            (4, 'Fourth Body', '2025-05-14', 'Fourth Location', 4);
     `)
 	if err != nil {
 		t.Fatalf("failed to insert additional authors and letters: %v", err)
@@ -214,7 +210,6 @@ func TestGetAll_SuccessfullyRetrieveAllLetters(t *testing.T) {
 	expectedLetters := []st.Letter{
 		{
 			ID:      1,
-			Title:   "Sample Title",
 			Body:    "Sample Body",
 			FoundAt: "2023-01-01",
 			FoundIn: "Sample Location",
@@ -222,7 +217,6 @@ func TestGetAll_SuccessfullyRetrieveAllLetters(t *testing.T) {
 		},
 		{
 			ID:      2,
-			Title:   "Second Title",
 			Body:    "Second Body",
 			FoundAt: "2025-05-12",
 			FoundIn: "Second Location",
@@ -230,7 +224,6 @@ func TestGetAll_SuccessfullyRetrieveAllLetters(t *testing.T) {
 		},
 		{
 			ID:      3,
-			Title:   "Third Title",
 			Body:    "Third Body",
 			FoundAt: "2025-05-13",
 			FoundIn: "Third Location",
@@ -238,7 +231,6 @@ func TestGetAll_SuccessfullyRetrieveAllLetters(t *testing.T) {
 		},
 		{
 			ID:      4,
-			Title:   "Fourth Title",
 			Body:    "Fourth Body",
 			FoundAt: "2025-05-14",
 			FoundIn: "Fourth Location",
