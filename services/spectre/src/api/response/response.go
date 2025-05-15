@@ -7,15 +7,15 @@ import (
 
 type Response struct {
 	Success bool        `json:"success"`
-	Data    interface{} `json:"data"`
+	Content interface{} `json:"content"`
 	Error   interface{} `json:"error"`
 }
 
 // Ok wrap data to json ok response
-func Ok(w http.ResponseWriter, data interface{}) {
+func Ok(w http.ResponseWriter, content interface{}) {
 	r := Response{
 		Success: true,
-		Data:    data,
+		Content: content,
 	}
 	json.NewEncoder(w).Encode(r)
 }
@@ -52,6 +52,15 @@ func ErrCannotGetWithID(w http.ResponseWriter, sid string) {
 	r := Response{
 		Success: false,
 		Error:   "cannot get with id " + sid,
+	}
+	json.NewEncoder(w).Encode(r)
+}
+
+func ErrCannotDeleteWithID(w http.ResponseWriter, sid string) {
+	w.WriteHeader(http.StatusInternalServerError)
+	r := Response{
+		Success: false,
+		Error:   "cannot delete with id " + sid,
 	}
 	json.NewEncoder(w).Encode(r)
 }

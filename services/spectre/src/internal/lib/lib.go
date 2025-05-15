@@ -28,8 +28,6 @@ func SplitName(name string) (string, string, string) {
 func GetID(point, pattern string) (string, int, error) {
 	var sid string
 
-	// point = strings.TrimLeft(point, "GET ")
-	// fmt.Println(pattern, point)
 	if parts := strings.Split(pattern, point); len(parts) > 1 {
 		sid = parts[1]
 	}

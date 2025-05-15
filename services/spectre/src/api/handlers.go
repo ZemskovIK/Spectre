@@ -68,3 +68,28 @@ func (h *lettersHandler) getOne(
 	h.log.Infof("%s: successfully retrieved letter with id: %d", loc, id)
 	response.Ok(w, letter)
 }
+
+func (h *lettersHandler) delete(
+	w http.ResponseWriter, r *http.Request,
+) {
+	loc := GLOC + "delete()"
+
+	sid, id, err := lib.GetID(LETTER_POINT, r.RequestURI)
+	if err != nil {
+		h.log.Errorf("%s: invalid id %s : %v", loc, sid, err)
+		response.ErrInvalidID(w, sid)
+		return
+	}
+
+	if err := h.st.Delete(id); err != nil {
+		if err.Error() == storage.ErrLetterNotFound(id).Error() {
+			h.log.Warnf("%s: letter not found with id: %d", loc, id)
+			response.ErrNotFound(w, sid)
+		} else {
+			response.ErrCannotDeleteWithID(w, sid)
+		}
+		return
+	}
+
+	response.Ok(w, nil)
+}
