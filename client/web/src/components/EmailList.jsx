@@ -27,82 +27,30 @@ export default function EmailList({
             messageRows.map((row, rowIndex) => (
               <div key={rowIndex} className="grid grid-cols-4 gap-4">
                 {row.map((message) => (
-                  <>
-                    <div>
-                      {" "}
-                      {message.success ? (
-                        <h1>
-                          <div
-                            key={message.content.id}
-                            className="relative group relative bg-gray-450 p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-transform hover:scale-105"
-                            onClick={() =>
-                              onEmailClick(
-                                message.content[0],
-                                message.success,
-                                message.error
-                              )
-                            }
-                          >
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteEmail(message.content[0].id);
-                              }}
-                              className=" rounded-full absolute right-0 text-red-400 p-1 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
-                              disabled={deletingId === message.content[0].id}
-                            >
-                              <strong className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 ">
-                                &#10060;
-                              </strong>
-                            </button>
-                            <div className="flex flex-col items-center">
-                              <img src="https://e7.pngegg.com/pngimages/178/760/png-clipart-paper-envelope-letter-mail-envelope-miscellaneous-material.png"></img>
-                              <span className="font-medium text-sm text-center truncate w-full">
-                                {message.success
-                                  ? message.content[0].author
-                                  : "error"}
-                              </span>
-                              <span className="text-xs text-gray-500 mt-1">
-                                номер:{" "}
-                                {message.success
-                                  ? message.content[0].id
-                                  : "error"}
-                              </span>
-                            </div>
-                          </div>
-                        </h1>
-                      ) : (
-                        <p>
-                          <div
-                            key={message}
-                            className="relative group relative bg-gray-450 p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-transform hover:scale-105"
-                            onClick={() =>
-                              onEmailClick(
-                                "error",
-                                message.success,
-                                message.error
-                              )
-                            }
-                          >
-                            <div className="flex flex-col items-center">
-                              <img src="https://e7.pngegg.com/pngimages/178/760/png-clipart-paper-envelope-letter-mail-envelope-miscellaneous-material.png"></img>
-                              <span className="font-medium text-sm text-center truncate w-full">
-                                {message.success
-                                  ? message.content[0].author
-                                  : "error"}
-                              </span>
-                              <span className="text-xs text-gray-500 mt-1">
-                                номер:{" "}
-                                {message.success
-                                  ? message.content[0].id
-                                  : "error"}
-                              </span>
-                            </div>
-                          </div>
-                        </p>
-                      )}
-                    </div>
-                  </>
+                  <div
+                    key={message.id}
+                    className="relative group relative bg-gray-450 p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-transform hover:scale-105"
+                    onClick={() => onEmailClick(message)}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteEmail(message.id);
+                      }}
+                      className=" rounded-full absolute right-0 text-red-400 p-1 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
+                      disabled={deletingId === message.id}
+                    >
+                      <strong className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 ">
+                        &#10060;
+                      </strong>
+                    </button>
+                    <div className="flex flex-col items-center">
+                      <img src="https://e7.pngegg.com/pngimages/178/760/png-clipart-paper-envelope-letter-mail-envelope-miscellaneous-material.png"></img>
+                      <span className="font-medium text-sm text-center truncate w-full">
+                        {message.author}
+                      </span>
+                    </div> 
+                </div> 
                 ))}
                 {row.length < 4 &&
                   Array(4 - row.length)
