@@ -21,6 +21,8 @@ export default function MailApp() {
   const [deletingId, setDeletingId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [isntError, setIsntError] = useState();
+  const [errorText, setErrorText] = useState();
 
   useEffect(() => {
     fetchMessages();
@@ -31,7 +33,7 @@ export default function MailApp() {
       const response = await axios.get("http://localhost:5000/api/letters");
       setMessages(response.data);
     } catch (error) {
-      console.error("ошибка отправки:", error);
+      console.error("Ошибка отправки:", error);
     }
   };
 
@@ -102,8 +104,11 @@ export default function MailApp() {
     }
   };
 
-  const openMessage = (message) => {
+  const openMessage = (message, er, ertxt) => {
     setSelectedMessage(message);
+    setIsntError(er);
+    setErrorText(ertxt);
+    console.log(er);
     setShowModal(true);
   };
 
@@ -208,6 +213,8 @@ export default function MailApp() {
       {showModal && (
         <ModalWindow
           onClose={() => setShowModal(false)}
+          isError={isntError}
+          errorText={errorText}
           dataInt={selectedMessage.found_at}
           title={selectedMessage.author}
           foundIn={selectedMessage.found_in}
