@@ -49,9 +49,9 @@ export default function EmailList({
                       <span className="font-medium text-sm text-center truncate w-full">
                         {message.author}
                       </span>
-                      {/* <span className="text-xs text-gray-500 mt-1">
-                        {message.id}
-                      </span> */}
+                      <span className="text-xs text-gray-500 mt-1">
+                        номер: {message.id}
+                      </span>
                     </div>
                   </div>
                 ))}
