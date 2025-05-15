@@ -2,8 +2,14 @@ package api
 
 import (
 	"net/http"
+	"spectre/api/methods"
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"
+)
+
+const (
+	LETTERS_POINT = "/api/letters"
+	LETTER_POINT  = "/api/letters/"
 )
 
 type Router struct {
@@ -18,17 +24,18 @@ func NewRouter(s st.LettersStorage, log *logger.Logger) *Router {
 		log: log,
 	}
 
-	mux.Handle("GET /api/letters",
+	mux.Handle(methods.GET(LETTERS_POINT),
 		CORSMiddleware(
 			JSONRespMiddleware(
 				http.HandlerFunc(lettersHL.getAll),
 			),
 		))
-	mux.Handle("GET /api/letters/{$}", CORSMiddleware(
-		JSONRespMiddleware(
-			http.HandlerFunc(lettersHL.getOne),
-		),
-	))
+	mux.Handle(methods.GET(LETTER_POINT),
+		CORSMiddleware(
+			JSONRespMiddleware(
+				http.HandlerFunc(lettersHL.getOne),
+			),
+		))
 
 	return &Router{
 		mux: mux,

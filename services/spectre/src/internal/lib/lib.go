@@ -1,6 +1,9 @@
 package lib
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 const (
 	UNK_NAME = ""
@@ -18,4 +21,23 @@ func SplitName(name string) (string, string, string) {
 	default:
 		return names[0], names[1], strings.Join(names[2:], " ")
 	}
+}
+
+// GetID returns the last post-/ part of pattern slited by point
+// ex: pattern '/api/point/1/2 point' 'GET /api/point/' : will return "1/2" -1 err
+func GetID(point, pattern string) (string, int, error) {
+	var sid string
+
+	// point = strings.TrimLeft(point, "GET ")
+	// fmt.Println(pattern, point)
+	if parts := strings.Split(pattern, point); len(parts) > 1 {
+		sid = parts[1]
+	}
+
+	id, err := strconv.Atoi(sid)
+	if err != nil {
+		return sid, -1, err
+	}
+
+	return sid, id, nil
 }

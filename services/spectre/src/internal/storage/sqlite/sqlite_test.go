@@ -5,12 +5,21 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+func mustParseDate(s string) time.Time {
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
 
 func setupTestDB(t *testing.T) *sql.DB {
 	t.Helper()
@@ -31,7 +40,7 @@ func setupTestDB(t *testing.T) *sql.DB {
         CREATE TABLE letters (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             body TEXT NOT NULL,
-            found_at TEXT NOT NULL,
+            found_at TIMESTAMP NOT NULL,
             found_in TEXT NOT NULL,
             author_id INTEGER DEFAULT NULL,
             FOREIGN KEY(author_id) REFERENCES authors(id) ON DELETE SET NULL
@@ -137,7 +146,7 @@ func TestSave_SuccessfullySaveLetter(t *testing.T) {
 
 	letter := st.Letter{
 		Body:    "New Body",
-		FoundAt: "2025-05-12",
+		FoundAt: time.Now(),
 		FoundIn: "New Location",
 		Author:  "Jane Doe",
 	}
@@ -211,33 +220,32 @@ func TestGetAll_SuccessfullyRetrieveAllLetters(t *testing.T) {
 		{
 			ID:      1,
 			Body:    "Sample Body",
-			FoundAt: "2023-01-01",
+			FoundAt: mustParseDate("2023-01-01"),
 			FoundIn: "Sample Location",
 			Author:  "John Doe",
 		},
 		{
 			ID:      2,
 			Body:    "Second Body",
-			FoundAt: "2025-05-12",
+			FoundAt: mustParseDate("2025-05-12"),
 			FoundIn: "Second Location",
 			Author:  "Alice Smith",
 		},
 		{
 			ID:      3,
 			Body:    "Third Body",
-			FoundAt: "2025-05-13",
+			FoundAt: mustParseDate("2025-05-13"),
 			FoundIn: "Third Location",
 			Author:  "Bob Michael Asd",
 		},
 		{
 			ID:      4,
 			Body:    "Fourth Body",
-			FoundAt: "2025-05-14",
+			FoundAt: mustParseDate("2025-05-14"),
 			FoundIn: "Fourth Location",
 			Author:  "Charlie",
 		},
 	}
-
 	for i, expected := range expectedLetters {
 		if letters[i] != expected {
 			t.Errorf("expected letter at index %d: %+v, got: %+v", i, expected, letters[i])

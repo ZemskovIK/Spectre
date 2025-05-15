@@ -1,12 +1,11 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
+	"spectre/api/response"
+	"spectre/internal/lib"
 	"spectre/internal/storage"
 	"spectre/pkg/logger"
-	"strconv"
-	"strings"
 )
 
 var GLOC = "src/internal/api/handlers.go/"
@@ -25,19 +24,18 @@ func (h *lettersHandler) getAll(
 	letters, err := h.st.GetAll()
 	if err != nil {
 		h.log.Errorf("%s: failed to retrieve letters: %v", loc, err)
-		errFailedToRetrieveLatters(w)
+		response.ErrFailedToRetrieveLetters(w)
 		return
 	}
 
 	if len(letters) == 0 {
-		h.log.Infof("%s: no letters found", loc)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("[]"))
+		h.log.Warnf("%s: no letters found", loc)
+		response.Ok(w, []interface{}{})
 		return
 	}
 
 	h.log.Infof("%s: successfully retrieved letters", loc)
-	json.NewEncoder(w).Encode(letters)
+	response.Ok(w, letters)
 }
 
 func (h *lettersHandler) getOne(
@@ -46,11 +44,10 @@ func (h *lettersHandler) getOne(
 	loc := GLOC + "getOne()"
 	h.log.Infof("%s: retrieving a single letter", loc)
 
-	sid := strings.TrimPrefix(r.URL.Path, "/api/letters/")
-	id, err := strconv.Atoi(sid)
+	sid, id, err := lib.GetID(LETTER_POINT, r.RequestURI)
 	if err != nil {
-		h.log.Errorf("%s: invalid id: %s", loc, sid)
-		errInvalidID(w, sid)
+		h.log.Errorf("%s: invalid id %s : %v", loc, sid, err)
+		response.ErrInvalidID(w, sid)
 		return
 	}
 
@@ -59,15 +56,15 @@ func (h *lettersHandler) getOne(
 	if err != nil {
 		if err.Error() == storage.ErrLetterNotFound(id).Error() {
 			h.log.Warnf("%s: letter not found with id: %d", loc, id)
-			errNotFound(w, id)
+			response.ErrNotFound(w, sid)
 		} else {
 			h.log.Errorf("%s: failed to retrieve letter with id: %d, error: %v",
 				loc, id, err)
-			errCannotGetWithID(w, id)
+			response.ErrCannotGetWithID(w, sid)
 		}
 		return
 	}
 
 	h.log.Infof("%s: successfully retrieved letter with id: %d", loc, id)
-	json.NewEncoder(w).Encode(letter)
+	response.Ok(w, letter)
 }
