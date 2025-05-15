@@ -50,6 +50,7 @@ export default function EmailList({
                         {message.author}
                       </span>
                     </div> 
+                </div> 
                 ))}
                 {row.length < 4 &&
                   Array(4 - row.length)
