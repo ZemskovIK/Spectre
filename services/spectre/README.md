@@ -55,7 +55,7 @@
             "body": "body"
         },
         {
-            "id": 3,Hi T Ler
+            "id": 3,
             "author": "Author3",
             "found_at": "2005-11-11T00:00:00Z",
             "found_in": "kek",
