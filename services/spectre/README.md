@@ -21,11 +21,103 @@
     - `migrator/` - Приложение для создания или отката миграций
     - `spectre/` - Основное приложение
 - `internal/` - Основная бизнес-логика и сервисы
+    - `lib/` - Вспомогательные функции широкого назначения
     - `storage/` - Работа с файловой системой (базами данных)
         - `sqlite/` - Одна из реализаций базы (sqlite)
 - `pkg/` - Общие утилиты и вспомогательные функции
     - `logger/` - Обертка вокруг логгера (logrus)
 - `api/` - Апи поинты сервиса
+    - `methods/` - Функции для унификации методов в роутере
+    - `response/` - Описание ответа
 
 ---
+
+## Поинты
+
+- `/api/letters` 
+    - GET 200 -> 
+```json
+{
+    "success": true,
+    "data": [
+        {
+            "id": 1,
+            "author": "Author1",
+            "found_at": "2005-11-11T00:00:00Z",
+            "found_in": "kek",
+            "body": "body"
+        },
+        {
+            "id": 2,
+            "author": "Author2",
+            "found_at": "2005-11-11T00:00:00Z",
+            "found_in": "kek",
+            "body": "body"
+        },
+        {
+            "id": 3,Hi T Ler
+            "author": "Author3",
+            "found_at": "2005-11-11T00:00:00Z",
+            "found_in": "kek",
+            "body": "body"
+        }
+    ],
+    "error": null
+}
+```
+
+    - GET 500 ->
+```json
+{
+    "success": false,
+    "data": null,
+    "error": "error!"
+}
+```
+
+
+- `api/letters/{letter_id}`
+    - GET 200 ->
+```json
+{
+    "success": true,
+    "data":
+    {
+        "id": 1,
+        "author": "Author3",
+        "found_at": "2005-11-11T00:00:00Z",
+        "found_in": "kek",
+        "body": "body"
+    },
+    "error": null
+}
+```
+
+    - GET 500 ->
+```json
+{
+    "success": false,
+    "data": null,
+    "error": "error!"
+}
+```
+
+    - DELETE 200 ->
+```json
+{
+    "success": true,
+    "data": null,
+    "error": null
+}
+```
+
+    - DELETE 500 ->
+```json
+{
+    "success": false,
+    "data": null,
+    "error": "error!"
+}
+```
+
 
