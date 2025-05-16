@@ -54,3 +54,15 @@ func ErrCannotDeleteWithID(w http.ResponseWriter, sid string) {
 	r := NewResponse(nil, "cannot delete with id "+sid)
 	json.NewEncoder(w).Encode(r)
 }
+
+func ErrInvalidRequest(w http.ResponseWriter, msg string) {
+	w.WriteHeader(http.StatusBadRequest)
+	r := NewResponse(nil, msg)
+	json.NewEncoder(w).Encode(r)
+}
+
+func ErrCannotSave(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusUnprocessableEntity)
+	r := NewResponse(nil, "cannot save!")
+	json.NewEncoder(w).Encode(r)
+}

@@ -42,6 +42,12 @@ func NewRouter(s st.LettersStorage, log *logger.Logger) *Router {
 				http.HandlerFunc(lettersHL.delete),
 			),
 		))
+	mux.Handle(methods.POST(LETTERS_POINT),
+		CORSMiddleware(
+			JSONRespMiddleware(
+				http.HandlerFunc(lettersHL.add),
+			),
+		))
 
 	return &Router{
 		mux: mux,

@@ -32,86 +32,121 @@
 
 ---
 
-## Поинты
+## API эндпоинты
 
-- `/api/letters` 
-    - GET 200 -> 
+### Получить все письма
+
+`GET /api/letters`
+
+**Успех (200 OK):**
 ```json
 {
-    "data": [
-        {
-            "id": 1,
-            "author": "Author1",
-            "found_at": "2005-11-11T00:00:00Z",
-            "found_in": "kek",
-            "body": "body"
-        },
-        {
-            "id": 2,
-            "author": "Author2",
-            "found_at": "2005-11-11T00:00:00Z",
-            "found_in": "kek",
-            "body": "body"
-        },
-        {
-            "id": 3,
-            "author": "Author3",
-            "found_at": "2005-11-11T00:00:00Z",
-            "found_in": "kek",
-            "body": "body"
-        }
-    ],
-    "error": null
-}
-```
-
-    - GET 500 ->
-```json
-{
-    "data": null,
-    "error": "error!"
-}
-```
-
-
-- `api/letters/{letter_id}`
-    - GET 200 ->
-```json
-{
-    "data":
+  "data": [
     {
-        "id": 1,
-        "author": "Author3",
-        "found_at": "2005-11-11T00:00:00Z",
-        "found_in": "kek",
-        "body": "body"
+      "id": 1,
+      "author": "Author1",
+      "found_at": "2005-11-11T00:00:00Z",
+      "found_in": "kek",
+      "body": "body"
     },
-    "error": null
+    {
+      "id": 2,
+      "author": "Author2",
+      "found_at": "2005-11-11T00:00:00Z",
+      "found_in": "kek",
+      "body": "body"
+    }
+  ],
+  "error": null
 }
 ```
 
-    - GET 500 ->
+**Ошибка (500 Internal Server Error):**
 ```json
 {
-    "data": null,
-    "error": "error!"
+  "data": null,
+  "error": "error!"
 }
 ```
 
-    - DELETE 200 ->
+---
+
+### Получить письмо по ID
+
+`GET /api/letters/{letter_id}`
+
+**Успех (200 OK):**
 ```json
 {
-    "data": null,
-    "error": null
+  "data": {
+    "id": 1,
+    "author": "Author3",
+    "found_at": "2005-11-11T00:00:00Z",
+    "found_in": "kek",
+    "body": "body"
+  },
+  "error": null
 }
 ```
 
-    - DELETE 500 ->
+**Ошибка (500 Internal Server Error):**
 ```json
 {
-    "data": null,
-    "error": "error!"
+  "data": null,
+  "error": "error!"
 }
 ```
 
+---
 
+### Удалить письмо по ID
+
+`DELETE /api/letters/{letter_id}`
+
+**Успех (200 OK):**
+```json
+{
+  "data": null,
+  "error": null
+}
+```
+
+**Ошибка (500 Internal Server Error):**
+```json
+{
+  "data": null,
+  "error": "error!"
+}
+```
+
+---
+
+### Создать новое письмо
+
+`POST /api/letters`
+
+**Тело запроса (application/json):**
+```json
+{
+  "author": "Author Name",
+  "found_at": "2005-11-11T00:00:00Z",
+  "found_in": "Место находки",
+  "body": "Текст письма"
+}
+```
+
+**Успех (200 OK):**
+```json
+{
+  "data": null,
+  "error": null
+}
+```
+
+**Ошибка (422 | 400):**
+```json
+{
+  "data": null,
+  "error": "error!"
+}
+```

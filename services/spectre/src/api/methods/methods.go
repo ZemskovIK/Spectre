@@ -7,3 +7,11 @@ func GET(point string) string {
 func DELETE(point string) string {
 	return "DELETE " + point
 }
+
+func POST(point string) string {
+	return "POST " + point
+}
+
+func PUT(point string) string {
+	return "PUT " + point
+}

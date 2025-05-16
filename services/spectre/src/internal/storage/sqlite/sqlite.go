@@ -22,9 +22,11 @@ type sqliteDB struct {
 
 func New(dbPath string, log *logger.Logger) (st.LettersStorage, error) {
 	loc := GLOC + "New()"
+	log.Debugf("%s: opening sqlite db at path: %s", loc, dbPath)
 
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
+		log.Errorf("%s: failed to open sqlite db: %v", loc, err)
 		return nil, errCannotConnectSQLite(loc, err)
 	}
 
@@ -37,11 +39,13 @@ func New(dbPath string, log *logger.Logger) (st.LettersStorage, error) {
 // Get retrieves a letter by id from db
 func (s *sqliteDB) Get(id int) (st.Letter, error) {
 	loc := GLOC + "Get()"
+	s.log.Debugf("%s: preparing to get letter with id: %d", loc, id)
 
 	query := `SELECT l.id, l.body, l.found_at, l.found_in
               FROM letters l
               LEFT JOIN authors a ON l.author_id = a.id
               WHERE l.id = ?`
+	s.log.Debugf("%s: executing query: %s with id=%d", loc, query, id)
 
 	var letter st.Letter
 	if err := s.db.QueryRow(query, id).Scan(
@@ -65,15 +69,18 @@ func (s *sqliteDB) Get(id int) (st.Letter, error) {
 // Save saves a letter to db
 func (s *sqliteDB) Save(letter st.Letter) error {
 	loc := GLOC + "Save()"
+	s.log.Debugf("%s: preparing to save letter: %+v", loc, letter)
 
 	aID, err := s.getOrCreateAuthor(letter.Author)
-	if err != nil {
+	if err != nil || aID <= 0 {
 		s.log.Errorf("%s: error getting or creating author '%s': %v", loc, letter.Author, err)
 		return err
 	}
+	s.log.Debugf("%s: using author_id=%d for letter", loc, aID)
 
 	query := `INSERT INTO letters (body, found_at, found_in, author_id)
 	          VALUES (?, ?, ?, ?)`
+	s.log.Debugf("%s: executing query: %s with values: body=%s, found_at=%s, found_in=%s, author_id=%d", loc, query, letter.Body, letter.FoundAt, letter.FoundIn, aID)
 	_, err = s.db.Exec(query,
 		letter.Body,
 		letter.FoundAt,
@@ -90,8 +97,10 @@ func (s *sqliteDB) Save(letter st.Letter) error {
 
 func (s *sqliteDB) Delete(id int) error {
 	loc := GLOC + "Delete()"
+	s.log.Debugf("%s: preparing to delete letter with id: %d", loc, id)
 
 	query := `DELETE FROM letters WHERE id = ?`
+	s.log.Debugf("%s: executing query: %s with id=%d", loc, query, id)
 	result, err := s.db.Exec(query, id)
 	if err != nil {
 		s.log.Errorf("%s: error deleting letter with id %d: %v", loc, id, err)
@@ -103,6 +112,7 @@ func (s *sqliteDB) Delete(id int) error {
 		s.log.Errorf("%s: error fetching rows affected for id %d: %v", loc, id, err)
 		return errCannotFetchRows(id, err)
 	}
+	s.log.Debugf("%s: rows affected: %d", loc, rowsAffected)
 
 	if rowsAffected == 0 {
 		s.log.Warnf("%s: no letter found with id %d", loc, id)
@@ -115,17 +125,22 @@ func (s *sqliteDB) Delete(id int) error {
 
 func (s *sqliteDB) GetAll() ([]st.Letter, error) {
 	loc := GLOC + "GetAll()"
+	s.log.Debugf("%s: preparing to get all letters", loc)
 
 	query := `SELECT l.id, l.body, l.found_at, l.found_in, 
 	          TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
               FROM letters l
               LEFT JOIN authors a ON l.author_id = a.id`
+	s.log.Debugf("%s: executing query: %s", loc, query)
 	rows, err := s.db.Query(query)
 	if err != nil {
 		s.log.Errorf("%s: error executing query: %v", loc, err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		s.log.Debugf("%s: closing rows", loc)
+		rows.Close()
+	}()
 
 	var letters []st.Letter
 	for rows.Next() {
@@ -141,6 +156,7 @@ func (s *sqliteDB) GetAll() ([]st.Letter, error) {
 			s.log.Errorf("%s: error scanning row: %v", loc, err)
 			return nil, err
 		}
+		s.log.Debugf("%s: scanned letter: %+v", loc, letter)
 		letters = append(letters, letter)
 	}
 
@@ -156,19 +172,23 @@ func (s *sqliteDB) GetAll() ([]st.Letter, error) {
 // getOrCreateAuthor checks if author exists in db, if not creates it
 func (s *sqliteDB) getOrCreateAuthor(name string) (int, error) {
 	loc := GLOC + "getOrCreateAuthor()"
+	s.log.Debugf("%s: splitting author name: '%s'", loc, name)
 
 	var fname, mname, lname string = lib.SplitName(name)
+	s.log.Debugf("%s: split result: fname='%s', mname='%s', lname='%s'", loc, fname, mname, lname)
 	var id int
 
 	query := `SELECT id, fname, mname, lname
 	          FROM authors
 			  WHERE fname = ? AND mname = ? AND lname = ?`
+	s.log.Debugf("%s: executing query: %s with fname=%s, mname=%s, lname=%s", loc, query, fname, mname, lname)
 	if err := s.db.QueryRow(query, fname, mname, lname).Scan(
 		&id,
 		&fname,
 		&mname,
 		&lname,
 	); err == nil {
+		s.log.Debugf("%s: author found: id=%d, fname=%s, mname=%s, lname=%s", loc, id, fname, mname, lname)
 		s.log.Infof("%s: author '%s' found with id %d", loc, name, id)
 		return id, nil
 	} else if err != sql.ErrNoRows {
@@ -176,6 +196,7 @@ func (s *sqliteDB) getOrCreateAuthor(name string) (int, error) {
 		return -1, errWnenFetchAuthor(name, err)
 	}
 
+	s.log.Debugf("%s: author not found, inserting new author: fname=%s, mname=%s, lname=%s", loc, fname, mname, lname)
 	query = `INSERT INTO authors (fname, mname, lname)
 				VALUES (?, ?, ?)`
 	res, err := s.db.Exec(query, fname, mname, lname)
