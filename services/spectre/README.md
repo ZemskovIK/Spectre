@@ -38,7 +38,6 @@
     - GET 200 -> 
 ```json
 {
-    "success": true,
     "data": [
         {
             "id": 1,
@@ -69,7 +68,6 @@
     - GET 500 ->
 ```json
 {
-    "success": false,
     "data": null,
     "error": "error!"
 }
@@ -80,7 +78,6 @@
     - GET 200 ->
 ```json
 {
-    "success": true,
     "data":
     {
         "id": 1,
@@ -96,7 +93,6 @@
     - GET 500 ->
 ```json
 {
-    "success": false,
     "data": null,
     "error": "error!"
 }
@@ -105,7 +101,6 @@
     - DELETE 200 ->
 ```json
 {
-    "success": true,
     "data": null,
     "error": null
 }
@@ -114,7 +109,6 @@
     - DELETE 500 ->
 ```json
 {
-    "success": false,
     "data": null,
     "error": "error!"
 }
