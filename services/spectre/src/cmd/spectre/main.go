@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"os/signal"
@@ -8,6 +9,7 @@ import (
 	"spectre/internal/storage/sqlite"
 	"spectre/pkg/logger"
 	"syscall"
+	"time"
 )
 
 const (
@@ -18,7 +20,6 @@ const (
 func main() {
 	// init logger
 	log := logger.New(logLevel)
-	_ = log
 
 	// init config (?)
 
@@ -33,10 +34,17 @@ func main() {
 	r := api.NewRouter(st, log)
 	log.Info("init router")
 
+	// init server
+	srv := &http.Server{
+		Addr:    ":5000",
+		Handler: r,
+	}
+	log.Info("init server")
+
 	// run
-	log.Info("running server")
 	go func() {
-		if err := http.ListenAndServe(":5000", r); err != nil {
+		log.Info("running server")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("cannot run server on :5000 : %v", err)
 		}
 	}()
@@ -45,5 +53,11 @@ func main() {
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 	<-stop
 
-	log.Infof("shutdown :)")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("server forced to shutdown: %v", err)
+	}
+
+	log.Info("server exited gracefully :)")
 }

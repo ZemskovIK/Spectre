@@ -9,7 +9,7 @@ import (
 	"spectre/pkg/logger"
 )
 
-var GLOC = "src/internal/api/handlers.go/"
+const GLOC = "src/internal/api/handlers.go/"
 
 type lettersHandler struct {
 	st  st.LettersStorage
