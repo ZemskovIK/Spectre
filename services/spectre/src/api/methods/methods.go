@@ -15,3 +15,7 @@ func POST(point string) string {
 func PUT(point string) string {
 	return "PUT " + point
 }
+
+func OPTIONS(point string) string {
+	return "OPTIONS " + point
+}

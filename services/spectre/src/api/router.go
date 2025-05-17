@@ -13,7 +13,7 @@ const (
 )
 
 type Router struct {
-	mux *http.ServeMux
+	mux http.Handler
 }
 
 func NewRouter(s st.LettersStorage, log *logger.Logger) *Router {
@@ -24,39 +24,38 @@ func NewRouter(s st.LettersStorage, log *logger.Logger) *Router {
 		log: log,
 	}
 
+	// CORS
+	mux.Handle(methods.OPTIONS(LETTER_POINT),
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}),
+	)
+	mux.Handle(methods.OPTIONS(LETTERS_POINT),
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}),
+	)
+
 	mux.Handle(methods.GET(LETTERS_POINT),
-		CORSMiddleware(
-			JSONRespMiddleware(
-				http.HandlerFunc(lettersHL.getAll),
-			),
-		))
+		http.HandlerFunc(lettersHL.getAll),
+	)
 	mux.Handle(methods.GET(LETTER_POINT),
-		CORSMiddleware(
-			JSONRespMiddleware(
-				http.HandlerFunc(lettersHL.getOne),
-			),
-		))
+		http.HandlerFunc(lettersHL.getOne),
+	)
 	mux.Handle(methods.PUT(LETTER_POINT),
-		CORSMiddleware(
-			JSONRespMiddleware(
-				http.HandlerFunc(lettersHL.update),
-			),
-		))
+		http.HandlerFunc(lettersHL.update),
+	)
 	mux.Handle(methods.DELETE(LETTER_POINT),
-		CORSMiddleware(
-			JSONRespMiddleware(
-				http.HandlerFunc(lettersHL.delete),
-			),
-		))
+		http.HandlerFunc(lettersHL.delete),
+	)
 	mux.Handle(methods.POST(LETTERS_POINT),
-		CORSMiddleware(
-			JSONRespMiddleware(
-				http.HandlerFunc(lettersHL.add),
-			),
-		))
+		http.HandlerFunc(lettersHL.add),
+	)
+
+	mwmux := CORSMiddleware(
+		JSONRespMiddleware(
+			mux,
+		),
+	)
 
 	return &Router{
-		mux: mux,
+		mux: mwmux,
 	}
 }
 
