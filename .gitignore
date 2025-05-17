@@ -2,3 +2,4 @@ TODO.md
 .vscode/
 server/
 services/spectre/db/spec.db
+linesc.py
