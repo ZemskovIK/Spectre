@@ -35,7 +35,6 @@ func (h *lettersHandler) getAll(
 		return
 	}
 
-	h.log.Infof("%s: successfully retrieved letters", loc)
 	response.Ok(w, letters)
 }
 
@@ -66,7 +65,6 @@ func (h *lettersHandler) getOne(
 		return
 	}
 
-	h.log.Infof("%s: successfully retrieved letter with id: %d", loc, id)
 	response.Ok(w, letter)
 }
 
@@ -99,28 +97,85 @@ func (h *lettersHandler) add(
 	w http.ResponseWriter, r *http.Request,
 ) {
 	loc := GLOC + "add()"
-	_ = loc
+	h.log.Infof("%s: adding new letter", loc)
 
 	var letter st.Letter
 	if err := json.NewDecoder(r.Body).Decode(&letter); err != nil {
+		h.log.Errorf("%s: failed to decode JSON: %v", loc, err)
 		response.ErrInvalidRequest(w, "invalid JSON")
 		return
 	}
 
 	// ! TODO validation func
 	if letter.Body == "" {
+		h.log.Warnf("%s: body cannot be empty", loc)
 		response.ErrInvalidRequest(w, "body cannot be empty")
 		return
 	}
 	if letter.Author == "" {
+		h.log.Infof("%s: author is empty, setting to 'unknown'", loc)
 		letter.Author = "unknown"
 	}
 	if letter.FoundIn == "" {
+		h.log.Infof("%s: foundIn is empty, setting to 'unknown'", loc)
 		letter.FoundIn = "unknown"
 	}
 
+	h.log.Infof("%s: saving letter", loc)
 	if err := h.st.Save(letter); err != nil {
+		h.log.Errorf("%s: failed to save letter: %v", loc, err)
 		response.ErrCannotSave(w)
+		return
+	}
+
+	response.Ok(w, nil)
+}
+
+func (h *lettersHandler) update(
+	w http.ResponseWriter, r *http.Request,
+) {
+	log := GLOC + "update()"
+	h.log.Infof("%s: updating letter", log)
+
+	sid, id, err := lib.GetID(LETTER_POINT, r.RequestURI)
+	if err != nil {
+		h.log.Errorf("%s: invalid id %s : %v", log, sid, err)
+		response.ErrInvalidID(w, sid)
+		return
+	}
+
+	var letter st.Letter
+	if err := json.NewDecoder(r.Body).Decode(&letter); err != nil {
+		h.log.Errorf("%s: failed to decode JSON: %v", log, err)
+		response.ErrInvalidRequest(w, "invalid JSON")
+		return
+	}
+	letter.ID = id
+
+	// ! TODO validation func
+	if letter.Body == "" {
+		h.log.Warnf("%s: body cannot be empty", log)
+		response.ErrInvalidRequest(w, "body cannot be empty")
+		return
+	}
+	if letter.Author == "" {
+		h.log.Infof("%s: author is empty, setting to 'unknown'", log)
+		letter.Author = "unknown"
+	}
+	if letter.FoundIn == "" {
+		h.log.Infof("%s: foundIn is empty, setting to 'unknown'", log)
+		letter.FoundIn = "unknown"
+	}
+
+	h.log.Infof("%s: updating letter with id: %d", log, id)
+	if err := h.st.Update(letter); err != nil {
+		if err.Error() == st.ErrLetterNotFound(id).Error() {
+			h.log.Warnf("%s: letter not found with id: %d", log, id)
+			response.ErrNotFound(w, sid)
+		} else {
+			h.log.Errorf("%s: failed to update letter with id: %d, error: %v", log, id, err)
+			response.ErrCannotUpdate(w)
+		}
 		return
 	}
 

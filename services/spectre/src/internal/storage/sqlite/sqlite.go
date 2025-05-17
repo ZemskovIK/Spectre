@@ -123,6 +123,44 @@ func (s *sqliteDB) Delete(id int) error {
 	return nil
 }
 
+func (s *sqliteDB) Update(letter st.Letter) error {
+	loc := GLOC + "Update()"
+	s.log.Debugf("%s: preparing to update letter: %+v", loc, letter)
+
+	aID, err := s.getOrCreateAuthor(letter.Author)
+	if err != nil || aID <= 0 {
+		s.log.Errorf("%s: error getting or creating author '%s': %v", loc, letter.Author, err)
+		return err
+	}
+
+	query := `UPDATE letters
+              SET body = ?, found_at = ?, found_in = ?, author_id = ?
+              WHERE id = ?`
+	result, err := s.db.Exec(query,
+		letter.Body,
+		letter.FoundAt,
+		letter.FoundIn,
+		aID,
+		letter.ID,
+	)
+	if err != nil {
+		return errWhenUpdateLetter(letter.Body[:len(letter.Body)%10], err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		s.log.Errorf("%s: error fetching rows affected for id %d: %v", loc, letter.ID, err)
+		return err
+	}
+	if rowsAffected == 0 {
+		s.log.Warnf("%s: no letter found with id %d", loc, letter.ID)
+		return errLetterNotFound(letter.ID)
+	}
+
+	s.log.Infof("%s: successfully updated letter with id %d", loc, letter.ID)
+	return nil
+}
+
 func (s *sqliteDB) GetAll() ([]st.Letter, error) {
 	loc := GLOC + "GetAll()"
 	s.log.Debugf("%s: preparing to get all letters", loc)

@@ -14,6 +14,7 @@ type LettersStorage interface {
 	Get(id int) (Letter, error)
 	Save(letter Letter) error
 	Delete(id int) error
+	Update(letter Letter) error
 
 	GetAll() ([]Letter, error)
 }

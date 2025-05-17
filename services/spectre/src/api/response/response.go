@@ -66,3 +66,9 @@ func ErrCannotSave(w http.ResponseWriter) {
 	r := NewResponse(nil, "cannot save!")
 	json.NewEncoder(w).Encode(r)
 }
+
+func ErrCannotUpdate(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusInternalServerError)
+	r := NewResponse(nil, "cannot update!")
+	json.NewEncoder(w).Encode(r)
+}

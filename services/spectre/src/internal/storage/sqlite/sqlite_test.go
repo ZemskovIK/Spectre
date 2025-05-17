@@ -282,3 +282,69 @@ func TestDelete(t *testing.T) {
 		}
 	})
 }
+
+func TestUpdate_SuccessfullyUpdateLetter(t *testing.T) {
+	logger := logger.New("debug")
+	db := setupTestDB(t)
+	defer db.Close()
+
+	storage := &sqliteDB{db: db, log: logger}
+
+	// Обновляем существующее письмо
+	updated := st.Letter{
+		ID:      1,
+		Body:    "Updated Body",
+		FoundAt: mustParseDate("2024-05-17"),
+		FoundIn: "Updated Location",
+		Author:  "Updated Author",
+	}
+
+	err := storage.Update(updated)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Проверяем, что письмо обновлено
+	var got st.Letter
+	query := `SELECT l.id, l.body, l.found_at, l.found_in, 
+                     TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
+              FROM letters l
+              LEFT JOIN authors a ON l.author_id = a.id
+              WHERE l.id = ?`
+	err = db.QueryRow(query, updated.ID).Scan(
+		&got.ID,
+		&got.Body,
+		&got.FoundAt,
+		&got.FoundIn,
+		&got.Author,
+	)
+	if err != nil {
+		t.Fatalf("failed to retrieve updated letter: %v", err)
+	}
+
+	if got.Body != updated.Body || got.FoundIn != updated.FoundIn || got.Author != updated.Author {
+		t.Errorf("updated letter does not match: %+v", got)
+	}
+}
+
+func TestUpdate_LetterNotFound(t *testing.T) {
+	logger := logger.New("debug")
+	db := setupTestDB(t)
+	defer db.Close()
+
+	storage := &sqliteDB{db: db, log: logger}
+
+	// Пытаемся обновить несуществующее письмо
+	updated := st.Letter{
+		ID:      999,
+		Body:    "No Body",
+		FoundAt: mustParseDate("2024-05-17"),
+		FoundIn: "No Location",
+		Author:  "No Author",
+	}
+
+	err := storage.Update(updated)
+	if err == nil || err.Error() != errLetterNotFound(999).Error() {
+		t.Errorf("expected ErrLetterNotFound, got: %v", err)
+	}
+}

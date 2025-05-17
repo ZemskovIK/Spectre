@@ -24,7 +24,10 @@ var (
 	errWhenAddingAuthor = func(name string, err error) error {
 		return fmt.Errorf("cannot add author %s: %v", name, err)
 	}
-	errWhenAddingLetter = func(title string, err error) error {
-		return fmt.Errorf("cannot add letter with title %s: %v", title, err)
+	errWhenAddingLetter = func(body string, err error) error {
+		return fmt.Errorf("cannot add letter with body %s: %v", body, err)
+	}
+	errWhenUpdateLetter = func(body string, err error) error {
+		return fmt.Errorf("cannot update letter with body %s: %v", body, err)
 	}
 )
