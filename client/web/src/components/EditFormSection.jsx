@@ -1,4 +1,5 @@
 export default function EditFormSection({
+  handleChange,
   editingId,
   setEditingId,
   editingAuthor,
@@ -72,11 +73,11 @@ export default function EditFormSection({
             Дата
           </label>
           <input
-            id="author"
+            id="data"
             type="text"
             value={editingDataInt}
-            onChange={(e) => setEditingDataInt(e.target.value)}
-            placeholder="дата"
+            onChange={handleChange}
+            placeholder="дата дд.мм.гггг"
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />

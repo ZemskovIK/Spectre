@@ -1,4 +1,5 @@
 export default function SendFormSection({
+  handleChange,
   author,
   setAuthor,
   foundIn,
@@ -53,11 +54,11 @@ export default function SendFormSection({
             дата
           </label>
           <input
-            id="author"
+            id="date"
             type="text"
             value={dataInt}
-            onChange={(e) => setDataInt(e.target.value)}
-            placeholder="дата"
+            onChange={handleChange}
+            placeholder="дата дд.мм.гггг"
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />

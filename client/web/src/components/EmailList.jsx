@@ -1,6 +1,7 @@
 import React from "react";
 import { useState } from "react";
 export default function EmailList({
+  isError,
   messages,
   onEmailClick,
   onDeleteEmail,
@@ -15,14 +16,14 @@ export default function EmailList({
   const messageRows = chunkArray(messages, 4);
 
   return (
-    <div className="max-w-6xl mx-auto bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md overflow-hidden">
+    <div className="lg:w-6xl 2xl:w-7xl mx-auto bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md overflow-hidden">
       <div className="p-2 border-b">
         <h2 className="text-lg font-semibold">Письма ({messages.length})</h2>
       </div>
       <div className="overflow-y-auto" style={{ height: "300px" }}>
         <div className="p-4 space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-gray-500 py-8 text-center">Писем нет</div>
+          {isError != "Писем нет" || messages.length === 0 ? (
+            <div className="text-gray-500 py-8 text-center">{isError}</div>
           ) : (
             messageRows.map((row, rowIndex) => (
               <div key={rowIndex} className="grid grid-cols-4 gap-4">

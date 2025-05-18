@@ -21,6 +21,8 @@ export default function MailApp() {
   const [deletingId, setDeletingId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [isError, setIsError] = useState("Писем нет");
+  // const [listOfIndex, setListOfIndex] = useState([]);
 
   useEffect(() => {
     fetchMessages();
@@ -33,10 +35,46 @@ export default function MailApp() {
   const fetchMessages = async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/letters");
-      setMessages(response.data.content);
+      if (response.data.error == null) {
+        setMessages(response.data.content);
+        // setListOfIndex(response.data.content.map((item) => item.id));
+      } else {
+        setIsError(response.data.error);
+      }
     } catch (error) {
       console.error("ошибка отправки:", error);
     }
+  };
+
+  function transDataToDima(data) {
+    let newVal = `${data.slice(6, 10)}-${data.slice(3, 5)}-${data.slice(
+      0,
+      2
+    )}T00:00:00Z`;
+    return newVal;
+  }
+
+  function handleChangeModes() {
+    setIsEditing(true);
+    setEditingDataInt("");
+  }
+
+  const handleChange = (e) => {
+    let value = e.target.value;
+
+    value = value.replace(/[^\d]/g, "");
+
+    if (value.length > 2) {
+      value = `${value.slice(0, 2)}.${value.slice(2)}`;
+    }
+    if (value.length > 5) {
+      value = `${value.slice(0, 5)}.${value.slice(5, 9)}`;
+    }
+
+    if (value.length > 10) return;
+
+    setDataInt(value);
+    setEditingDataInt(value);
   };
 
   const deleteMessage = async (id) => {
@@ -64,7 +102,7 @@ export default function MailApp() {
         {
           body: newEditingMessage,
           author: editingAuthor.trim(),
-          found_at: editingDataInt.trim(),
+          found_at: transDataToDima(editingDataInt.trim()),
           found_in: editingFoundIn.trim(),
           // id2: "1",
         }
@@ -92,7 +130,7 @@ export default function MailApp() {
       const response = await axios.post("http://localhost:5000/api/letters", {
         body: newMessage,
         author: author.trim(),
-        found_at: dataInt.trim(),
+        found_at: transDataToDima(dataInt.trim()),
         found_in: foundIn.trim(),
         // id2: "1",
       });
@@ -122,13 +160,14 @@ export default function MailApp() {
       </div> */}
 
       <EmailList
+        isError={isError}
         messages={messages}
         onEmailClick={openMessage}
         onDeleteEmail={deleteMessage}
         deletingId={deletingId}
       ></EmailList>
       {/* w-full md:w-1/2 lg:w-3/4 xl:w-2/3 */}
-      <div className="max-w-6xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
+      <div className="lg:w-6xl 2xl:w-7xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
         <button
           onClick={() => setIsEditing(false)}
           className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
@@ -140,7 +179,7 @@ export default function MailApp() {
           Добавить новое письмо
         </button>{" "}
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={handleChangeModes}
           className={`py-1 px-1 rounded-lg text-white font-medium text-2xl font-semibold mb-4 ${
             isEditing
               ? "bg-gray-600 hover:bg-gray-700"
@@ -158,6 +197,7 @@ export default function MailApp() {
               autocomplete="off"
             >
               <SendFormSection
+                handleChange={handleChange}
                 author={author}
                 setAuthor={setAuthor}
                 foundIn={foundIn}
@@ -170,9 +210,17 @@ export default function MailApp() {
 
               <button
                 type="submit"
-                disabled={loading || !newMessage.trim() || !author.trim()}
+                disabled={
+                  loading ||
+                  !newMessage.trim() ||
+                  !author.trim() ||
+                  dataInt.length < 10
+                }
                 className={`px-6 py-2 rounded-lg text-white font-medium ${
-                  loading || !newMessage.trim() || !author.trim()
+                  loading ||
+                  !newMessage.trim() ||
+                  !author.trim() ||
+                  dataInt.length < 10
                     ? "bg-gray-300 cursor-not-allowed"
                     : "bg-gray-600 hover:bg-gray-700"
                 }`}
@@ -184,6 +232,7 @@ export default function MailApp() {
         ) : (
           <form onSubmit={editMessage} className="space-y-4" autocomplete="off">
             <EditFormSection
+              handleChange={handleChange}
               editingId={editingId}
               setEditingId={setEditingId}
               editingAuthor={editingAuthor}
@@ -198,10 +247,16 @@ export default function MailApp() {
             <button
               type="submit"
               disabled={
-                loading || !newEditingMessage.trim() || !editingAuthor.trim()
+                loading ||
+                !newEditingMessage.trim() ||
+                !editingAuthor.trim() ||
+                editingDataInt.length < 10
               }
               className={`px-6 py-2 rounded-lg text-white font-medium ${
-                loading || !newEditingMessage.trim() || !editingAuthor.trim()
+                loading ||
+                !newEditingMessage.trim() ||
+                !editingAuthor.trim() ||
+                editingDataInt.length < 10
                   ? "bg-gray-300 cursor-not-allowed"
                   : "bg-gray-600 hover:bg-gray-700"
               }`}
