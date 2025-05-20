@@ -22,6 +22,7 @@ export default function MailApp() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [isError, setIsError] = useState("Писем нет");
+  const [searchQuery, setSearchQuery] = useState("");
   // const [listOfIndex, setListOfIndex] = useState([]);
 
   useEffect(() => {
@@ -46,6 +47,12 @@ export default function MailApp() {
     }
   };
 
+  const filteredMessages = searchQuery.trim()
+    ? messages.filter((message) =>
+        message?.author?.toLowerCase()?.includes(searchQuery.toLowerCase())
+      )
+    : messages;
+
   function transDataToDima(data) {
     let newVal = `${data.slice(6, 10)}-${data.slice(3, 5)}-${data.slice(
       0,
@@ -55,8 +62,9 @@ export default function MailApp() {
   }
 
   function handleChangeModes() {
-    setIsEditing(true);
+    setIsEditing(!isEditing);
     setEditingDataInt("");
+    setDataInt("");
   }
 
   const handleChange = (e) => {
@@ -160,8 +168,10 @@ export default function MailApp() {
       </div> */}
 
       <EmailList
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
         isError={isError}
-        messages={messages}
+        messages={filteredMessages}
         onEmailClick={openMessage}
         onDeleteEmail={deleteMessage}
         deletingId={deletingId}
@@ -169,7 +179,7 @@ export default function MailApp() {
       {/* w-full md:w-1/2 lg:w-3/4 xl:w-2/3 */}
       <div className="lg:w-6xl 2xl:w-7xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
         <button
-          onClick={() => setIsEditing(false)}
+          onClick={handleChangeModes}
           className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
             isEditing
               ? "bg-gray-500 hover:bg-gray-700"
@@ -193,7 +203,7 @@ export default function MailApp() {
             {" "}
             <form
               onSubmit={sendMessage}
-              className="space-y-4"
+              className="space-y-2"
               autocomplete="off"
             >
               <SendFormSection
@@ -230,7 +240,7 @@ export default function MailApp() {
             </form>
           </>
         ) : (
-          <form onSubmit={editMessage} className="space-y-4" autocomplete="off">
+          <form onSubmit={editMessage} className="space-y-2" autocomplete="off">
             <EditFormSection
               handleChange={handleChange}
               editingId={editingId}

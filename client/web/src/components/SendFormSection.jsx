@@ -34,7 +34,7 @@ export default function SendFormSection({
             htmlFor="найдено"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            найдено
+            Найдено
           </label>
           <input
             id="author"
@@ -51,7 +51,7 @@ export default function SendFormSection({
             htmlFor="дата"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            дата
+            Дата
           </label>
           <input
             id="date"

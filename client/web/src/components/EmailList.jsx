@@ -1,6 +1,8 @@
 import React from "react";
 import { useState } from "react";
 export default function EmailList({
+  searchQuery,
+  setSearchQuery,
   isError,
   messages,
   onEmailClick,
@@ -17,10 +19,20 @@ export default function EmailList({
 
   return (
     <div className="lg:w-6xl 2xl:w-7xl mx-auto bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md overflow-hidden">
-      <div className="p-2 border-b">
+      <div className="pl-6 pt-2 pb-2 border-b">
         <h2 className="text-lg font-semibold">Письма ({messages.length})</h2>
       </div>
-      <div className="overflow-y-auto" style={{ height: "300px" }}>
+
+      <div className="pl-4 pr-8 pt-2">
+        <input
+          type="text"
+          placeholder="Поиск по автору..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+        />
+      </div>
+      <div className="overflow-y-auto" style={{ height: "260px" }}>
         <div className="p-4 space-y-4">
           {isError != "Писем нет" || messages.length === 0 ? (
             <div className="text-gray-500 py-8 text-center">{isError}</div>
@@ -30,7 +42,7 @@ export default function EmailList({
                 {row.map((message) => (
                   <div
                     key={message.id}
-                    className="relative group relative bg-gray-450 p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-transform hover:scale-105"
+                    className="relative group relative bg-gray-450 p-4 rounded-lg shadow-sm border cursor-pointer hover:shadow-md transition-transform h-57 hover:scale-105"
                     onClick={() => onEmailClick(message)}
                   >
                     <button
