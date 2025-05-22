@@ -83,9 +83,11 @@
 **Успех (200 OK):**
 ```json
 {
-  "content": {
-    "cipher_bytes": "base64string"
-  },
+  "content": [
+    "base64string1",
+    "base64string2",
+    "base64string3"
+  ],
   "error": null,
   "iv": "base64string",
   "hmac": "base64string",
@@ -113,9 +115,7 @@
 **Успех (200 OK):**
 ```json
 {
-  "content": {
-    "cipher_bytes": "base64string"
-  },
+  "content": "base64string",
   "error": null,
   "iv": "base64string",
   "hmac": "base64string",
@@ -171,6 +171,12 @@
 **Тело запроса (application/json):**
 ```json
 {
+  "cipher_bytes": "base64string"
+}
+```
+где шифруется структура вида
+```json
+{
   "author": "Author Name",
   "found_at": "2005-11-11T00:00:00Z",
   "found_in": "Место находки",
@@ -209,10 +215,16 @@
 **Тело запроса (application/json):**
 ```json
 {
-  "author": "Новое имя автора",
-  "found_at": "2024-05-17T00:00:00Z",
-  "found_in": "Новое место находки",
-  "body": "Обновлённый текст письма"
+  "cipher_bytes": "base64string"
+}
+```
+где шифруется структура вида
+```json
+{
+  "author": "Author Name",
+  "found_at": "2005-11-11T00:00:00Z",
+  "found_in": "Место находки",
+  "body": "Текст письма"
 }
 ```
 
