@@ -162,16 +162,19 @@ func (s *sqliteDB) Update(letter models.Letter) error {
 	return nil
 }
 
-func (s *sqliteDB) GetAll() ([]models.Letter, error) {
+func (s *sqliteDB) GetAllWithAccess(accessLevel int) ([]models.Letter, error) {
 	loc := GLOC + "GetAll()"
 	s.log.Debugf("%s: preparing to get all letters", loc)
 
 	query := `SELECT l.id, l.body, l.found_at, l.found_in, 
 	          TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
               FROM letters l
-              LEFT JOIN authors a ON l.author_id = a.id`
+              LEFT JOIN authors a ON l.author_id = a.id
+			  WHERE l.access_level <= ?`
 	s.log.Debugf("%s: executing query: %s", loc, query)
-	rows, err := s.db.Query(query)
+	rows, err := s.db.Query(query,
+		accessLevel,
+	)
 	if err != nil {
 		s.log.Errorf("%s: error executing query: %v", loc, err)
 		return nil, err
