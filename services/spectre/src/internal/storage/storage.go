@@ -10,11 +10,12 @@ type Letter struct {
 	Body    string    `json:"body"`
 }
 
-type LettersStorage interface {
+type Storage interface {
 	Get(id int) (Letter, error)
 	Save(letter Letter) error
 	Delete(id int) error
 	Update(letter Letter) error
-
 	GetAll() ([]Letter, error)
+
+	GetPHashByLogin(login string) ([]byte, error)
 }

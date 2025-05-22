@@ -20,7 +20,7 @@ type sqliteDB struct {
 	log *logger.Logger
 }
 
-func New(dbPath string, log *logger.Logger) (st.LettersStorage, error) {
+func NewStorage(dbPath string, log *logger.Logger) (st.Storage, error) {
 	loc := GLOC + "New()"
 	log.Debugf("%s: opening sqlite db at path: %s", loc, dbPath)
 
@@ -251,4 +251,8 @@ func (s *sqliteDB) getOrCreateAuthor(name string) (int, error) {
 
 	s.log.Infof("%s: successfully added author '%s' with id %d", loc, name, uid)
 	return int(uid), nil
+}
+
+func (s *sqliteDB) GetPHashByLogin(login string) ([]byte, error) {
+	return nil, nil
 }
