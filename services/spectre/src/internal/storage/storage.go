@@ -9,7 +9,7 @@ type Storage interface {
 	Save(letter models.Letter) error
 	Delete(id int) error
 	Update(letter models.Letter) error
-	GetAll() ([]models.Letter, error)
+	GetAllWithAccess(accessLevel int) ([]models.Letter, error)
 
 	GetUserByLogin(login string) (models.User, error)
 }
