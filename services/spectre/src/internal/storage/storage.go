@@ -1,21 +1,15 @@
 package storage
 
-import "time"
-
-type Letter struct {
-	ID      int       `json:"id"`
-	Author  string    `json:"author"`
-	FoundAt time.Time `json:"found_at"`
-	FoundIn string    `json:"found_in"`
-	Body    string    `json:"body"`
-}
+import (
+	"spectre/internal/models"
+)
 
 type Storage interface {
-	Get(id int) (Letter, error)
-	Save(letter Letter) error
+	Get(id int) (models.Letter, error)
+	Save(letter models.Letter) error
 	Delete(id int) error
-	Update(letter Letter) error
-	GetAll() ([]Letter, error)
+	Update(letter models.Letter) error
+	GetAll() ([]models.Letter, error)
 
-	GetPHashByLogin(login string) ([]byte, error)
+	GetUserByLogin(login string) (models.User, error)
 }

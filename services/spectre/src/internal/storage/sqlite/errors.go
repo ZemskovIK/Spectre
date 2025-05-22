@@ -30,4 +30,10 @@ var (
 	errWhenUpdateLetter = func(body string, err error) error {
 		return fmt.Errorf("cannot update letter with body %s: %v", body, err)
 	}
+	errUserNotFound = func(login string) error {
+		return fmt.Errorf("user with login %s not found", login)
+	}
+	errCannotGetUser = func(login string, err error) error {
+		return fmt.Errorf("cannot get user with login %s: %v", login, err)
+	}
 )
