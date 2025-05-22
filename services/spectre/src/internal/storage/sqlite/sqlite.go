@@ -3,6 +3,7 @@ package sqlite
 import (
 	"database/sql"
 	"spectre/internal/lib"
+	"spectre/internal/models"
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"
 
@@ -37,7 +38,7 @@ func NewStorage(dbPath string, log *logger.Logger) (st.Storage, error) {
 }
 
 // Get retrieves a letter by id from db
-func (s *sqliteDB) Get(id int) (st.Letter, error) {
+func (s *sqliteDB) Get(id int) (models.Letter, error) {
 	loc := GLOC + "Get()"
 	s.log.Debugf("%s: preparing to get letter with id: %d", loc, id)
 
@@ -47,7 +48,7 @@ func (s *sqliteDB) Get(id int) (st.Letter, error) {
               WHERE l.id = ?`
 	s.log.Debugf("%s: executing query: %s with id=%d", loc, query, id)
 
-	var letter st.Letter
+	var letter models.Letter
 	if err := s.db.QueryRow(query, id).Scan(
 		&letter.ID,
 		&letter.Body,
@@ -56,10 +57,10 @@ func (s *sqliteDB) Get(id int) (st.Letter, error) {
 	); err != nil {
 		if err == sql.ErrNoRows {
 			s.log.Warnf("%s: letter not found with id %d", loc, id)
-			return st.Letter{}, errLetterNotFound(id)
+			return models.Letter{}, errLetterNotFound(id)
 		}
 		s.log.Errorf("%s: error retrieving letter with id %d: %v", loc, id, err)
-		return st.Letter{}, errCannotGetLetter(id, err)
+		return models.Letter{}, errCannotGetLetter(id, err)
 	}
 
 	s.log.Infof("%s: successfully retrieved letter with id %d", loc, id)
@@ -67,7 +68,7 @@ func (s *sqliteDB) Get(id int) (st.Letter, error) {
 }
 
 // Save saves a letter to db
-func (s *sqliteDB) Save(letter st.Letter) error {
+func (s *sqliteDB) Save(letter models.Letter) error {
 	loc := GLOC + "Save()"
 	s.log.Debugf("%s: preparing to save letter: %+v", loc, letter)
 
@@ -123,7 +124,7 @@ func (s *sqliteDB) Delete(id int) error {
 	return nil
 }
 
-func (s *sqliteDB) Update(letter st.Letter) error {
+func (s *sqliteDB) Update(letter models.Letter) error {
 	loc := GLOC + "Update()"
 	s.log.Debugf("%s: preparing to update letter: %+v", loc, letter)
 
@@ -161,7 +162,7 @@ func (s *sqliteDB) Update(letter st.Letter) error {
 	return nil
 }
 
-func (s *sqliteDB) GetAll() ([]st.Letter, error) {
+func (s *sqliteDB) GetAll() ([]models.Letter, error) {
 	loc := GLOC + "GetAll()"
 	s.log.Debugf("%s: preparing to get all letters", loc)
 
@@ -180,9 +181,9 @@ func (s *sqliteDB) GetAll() ([]st.Letter, error) {
 		rows.Close()
 	}()
 
-	var letters []st.Letter
+	var letters []models.Letter
 	for rows.Next() {
-		var letter st.Letter
+		var letter models.Letter
 		err := rows.Scan(
 			&letter.ID,
 			&letter.Body,
@@ -253,6 +254,37 @@ func (s *sqliteDB) getOrCreateAuthor(name string) (int, error) {
 	return int(uid), nil
 }
 
-func (s *sqliteDB) GetPHashByLogin(login string) ([]byte, error) {
-	return nil, nil
+// CREATE TABLE IF NOT EXISTS users (
+//     id INTEGER PRIMARY KEY AUTOINCREMENT,
+//     login VARCHAR(200) UNIQUE NOT NULL,
+//     phash BLOB NOT NULL,
+//     access_level INTEGER DEFAULT 1
+// );
+
+func (s *sqliteDB) GetUserByLogin(login string) (models.User, error) {
+	loc := GLOC + "GetUserByLogin()"
+	s.log.Debugf("%s: preparing to get user by login: %s", loc, login)
+
+	query := `SELECT id, login, phash, access_level
+			  FROM users
+			  WHERE login = ?`
+	s.log.Debugf("%s: executing query: %s with login=%s", loc, query, login)
+
+	var user models.User
+	if err := s.db.QueryRow(query, login).Scan(
+		&user.ID,
+		&user.Login,
+		&user.PHash,
+		&user.AccessLevel,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			s.log.Warnf("%s: user not found with login %s", loc, login)
+			return models.User{}, errUserNotFound(login)
+		}
+
+		s.log.Errorf("%s: error retrieving user with login %s: %v", loc, login, err)
+		return models.User{}, errCannotGetUser(login, err)
+	}
+
+	return models.User{}, nil
 }
