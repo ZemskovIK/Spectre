@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"spectre/internal/lib"
+	"spectre/internal/srv/auth"
+	"spectre/pkg/logger"
 	"strings"
 	"time"
 
@@ -34,44 +36,88 @@ func CORSMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/login" {
-			next.ServeHTTP(w, r)
-			return
-		}
+// func AuthMiddleware(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		if r.URL.Path == "/login" {
+// 			next.ServeHTTP(w, r)
+// 			return
+// 		}
 
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+// 		authHeader := r.Header.Get("Authorization")
+// 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+// 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+// 			return
+// 		}
+// 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte("test_secret"), nil // ! TODO
-		})
-		if err != nil || !token.Valid {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
+// 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+// 			return []byte("test_secret"), nil // ! TODO
+// 		})
+// 		if err != nil || !token.Valid {
+// 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+// 			return
+// 		}
 
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			if expRaw, ok := claims["exp"]; ok {
-				exp, ok := expRaw.(float64)
-				if ok {
-					expTime := time.Unix(int64(exp), 0)
-					if time.Now().After(expTime) {
-						http.Error(w, "Token expired", http.StatusUnauthorized)
-						return
+// 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+// 			if expRaw, ok := claims["exp"]; ok {
+// 				exp, ok := expRaw.(float64)
+// 				if ok {
+// 					expTime := time.Unix(int64(exp), 0)
+// 					if time.Now().After(expTime) {
+// 						http.Error(w, "Token expired", http.StatusUnauthorized)
+// 						return
+// 					}
+// 				}
+// 			}
+// 			ctx := context.WithValue(r.Context(), lib.UserIDKey, claims["sub"])
+// 			ctx = context.WithValue(ctx, lib.UserAccessLevelKey, claims["role"])
+// 			r = r.WithContext(ctx)
+// 		}
+
+// 		next.ServeHTTP(w, r)
+// 	})
+// }
+
+func AuthMiddleware(logger *logger.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == auth.LOGIN_POINT {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+				return []byte("test_secret"), nil // ! TODO
+			})
+			if err != nil || !token.Valid {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			if claims, ok := token.Claims.(jwt.MapClaims); ok {
+				if expRaw, ok := claims["exp"]; ok {
+					exp, ok := expRaw.(float64)
+					if ok {
+						expTime := time.Unix(int64(exp), 0)
+						if time.Now().After(expTime) {
+							http.Error(w, "Token expired", http.StatusUnauthorized)
+							return
+						}
 					}
 				}
+				ctx := context.WithValue(r.Context(), lib.UserIDKey, claims["sub"])
+				ctx = context.WithValue(ctx, lib.UserAccessLevelKey, claims["role"])
+				r = r.WithContext(ctx)
 			}
-			ctx := context.WithValue(r.Context(), lib.UserIDKey, claims["sub"])
-			ctx = context.WithValue(ctx, lib.UserAccessLevelKey, claims["role"])
-			r = r.WithContext(ctx)
-		}
 
-		next.ServeHTTP(w, r)
-	})
+			next.ServeHTTP(w, r)
+		})
+	}
 }

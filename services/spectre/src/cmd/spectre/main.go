@@ -32,7 +32,7 @@ func main() {
 
 	// init router
 	r := server.NewRouter(st, log)
-	r.Use(server.AuthMiddleware)
+	r.Use(server.AuthMiddleware(log))
 	r.Use(server.CORSMiddleware)
 	r.Use(server.JSONRespMiddleware)
 	log.Info("init router")

@@ -35,29 +35,37 @@ func NewUsersHandler(
 func (h *usersHandler) GetAll(
 	w http.ResponseWriter, r *http.Request,
 ) {
+	loc := GLOC_USRS + "getAll()"
+	h.log.Infof("%s: retrieving all users", loc)
+
 	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
 	if !ok {
+		h.log.Errorf("%s: access level not found or wrong type", loc)
 		response.ErrFailedToRetrieveUsers(w)
 		return
 	}
 
 	if usrAccess < lib.ADMIN_ALEVEL {
+		h.log.Warnf("%s: blocked to get users, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
 		response.ErrBlockedToGet(w, usrAccess, lib.ADMIN_ALEVEL)
 		return
 	}
 
 	users, err := h.st.GetAllUsers()
 	if err != nil {
+		h.log.Errorf("%s: failed to retrieve users: %v", loc, err)
 		response.ErrFailedToRetrieveUsers(w)
 		return
 	}
 
 	if len(users) == 0 {
+		h.log.Warnf("%s: no users found", loc)
 		response.Ok(w, []interface{}{})
 		return
 	}
 
 	// ! TODO : encrypt
 
+	h.log.Infof("%s: successfully retrieved %d users", loc, len(users))
 	response.Ok(w, users)
 }

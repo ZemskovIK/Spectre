@@ -1,6 +1,6 @@
 package models
 
 type Credentials struct {
-	Login    string `json:"login"`
+	Login    string `json:"username"`
 	Password string `json:"password"`
 }
