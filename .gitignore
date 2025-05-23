@@ -3,3 +3,6 @@ TODO.md
 server/
 services/spectre/db/spec.db
 linesc.py
+services/crypto/client.py
+services/crypto/server.py
+services/crypto/__pycache__/

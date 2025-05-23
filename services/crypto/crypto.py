@@ -6,27 +6,26 @@ from cryptography.hazmat.primitives import hashes, serialization
 
 class ECDHKeyExchange:
     def __init__(self):
-        # Секретный ключ сервера
         self._private_key = ec.generate_private_key(ec.SECP256R1())
         self._shared_secret = None
         self.aes_key = None
         self.hmac_key = None
 
     def get_public_key_base64(self) -> str:
-        # Возвращает публичный ключ сервера в base64
+        # Возвращает публичный ключ в base64
         public_bytes = self._private_key.public_key().public_bytes(
             encoding=serialization.Encoding.X962,
             format=serialization.PublicFormat.UncompressedPoint
         )
         return base64.b64encode(public_bytes).decode()
 
-    def compute_shared_secret(self, client_pub_base64: str):
+    def compute_shared_secret(self, other_pub_base64: str):
         # Вычисляет ключи AES + HMAC по чужому публичному ключу
-        client_pub_bytes = base64.b64decode(client_pub_base64)
-        client_public_key = ec.EllipticCurvePublicKey.from_encoded_point(
-            ec.SECP256R1(), client_pub_bytes
+        other_pub_bytes = base64.b64decode(other_pub_base64)
+        other_public_key = ec.EllipticCurvePublicKey.from_encoded_point(
+            ec.SECP256R1(), other_pub_bytes
         )
-        self._shared_secret = self._private_key.exchange(ec.ECDH(), client_public_key)
+        self._shared_secret = self._private_key.exchange(ec.ECDH(), other_public_key)
 
         derived = HKDF(
             algorithm=hashes.SHA256(),
@@ -42,11 +41,12 @@ class ECDHKeyExchange:
 
 def main():
     # Воображаемая архитектура клиент-сервер
+    client = ECDHKeyExchange() # 1 
+    client_pub = client.get_public_key_base64() # 2
+
     server = ECDHKeyExchange() # 4
     server_pub = server.get_public_key_base64() # 5
 
-    client = ECDHKeyExchange() # 1 
-    client_pub = client.get_public_key_base64() # 2
 
     # Воображаемый обмен ключами # 3
 
