@@ -10,9 +10,11 @@ type Storage interface {
 	DeleteLetter(id int) error
 	UpdateLetter(letter models.Letter) error
 	GetAllLettersWithAccess(accessLevel int) ([]models.Letter, error)
+	GetAllLetters() ([]models.Letter, error)
 
 	GetUserByLogin(login string) (models.User, error)
-	SaveUser(id int) error
+	SaveUser(usr models.User) error
 	DeleteUser(id int) error
 	UpdateUser(usr models.User) error
+	GetAllUsers() ([]models.User, error)
 }
