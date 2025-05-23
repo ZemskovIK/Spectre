@@ -43,14 +43,14 @@ func (h *lettersHandler) GetAll(
 	loc := GLOC_LTS + "getAll()"
 	h.log.Infof("%s: retrieving all letters", loc)
 
-	accessLevel, ok := lib.FetchAccessLevelFromCtx(r.Context())
+	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
 	if !ok {
 		h.log.Errorf("%s: access level not found or wrong type", loc)
 		response.ErrFailedToRetrieveLetters(w)
 		return
 	}
 
-	letters, err := h.st.GetAllLettersWithAccess(accessLevel)
+	letters, err := h.st.GetAllLettersWithAccess(usrAccess)
 	if err != nil {
 		h.log.Errorf("%s: failed to retrieve letters: %v", loc, err)
 		response.ErrFailedToRetrieveLetters(w)
@@ -62,6 +62,8 @@ func (h *lettersHandler) GetAll(
 		response.Ok(w, []interface{}{})
 		return
 	}
+
+	// ! TODO : encrypt
 
 	response.Ok(w, letters)
 }
