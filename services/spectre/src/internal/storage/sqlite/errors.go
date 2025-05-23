@@ -30,4 +30,22 @@ var (
 	errWhenUpdateLetter = func(body string, err error) error {
 		return fmt.Errorf("cannot update letter with body %s: %v", body, err)
 	}
+	errUserNotFoundByLogin = func(login string) error {
+		return fmt.Errorf("user with login %s not found", login)
+	}
+	errUserNotFoundByID = func(id int) error {
+		return fmt.Errorf("user with id %d not found", id)
+	}
+	errCannotGetUser = func(login string, err error) error {
+		return fmt.Errorf("cannot get user with login %s: %v", login, err)
+	}
+	errCannotSaveUser = func(login string, err error) error {
+		return fmt.Errorf("cannot save user with login %s: %v", login, err)
+	}
+	errCannotDeleteUser = func(id int, err error) error {
+		return fmt.Errorf("cannot delete user with id %d: %v", id, err)
+	}
+	errCannotUpdateUser = func(id int, err error) error {
+		return fmt.Errorf("cannot update user with id %d: %v", id, err)
+	}
 )

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"spectre/api"
+	server "spectre/internal/srv"
 	"spectre/internal/storage/sqlite"
 	"spectre/pkg/logger"
 	"syscall"
@@ -24,14 +24,17 @@ func main() {
 	// init config (?)
 
 	// init storage
-	st, err := sqlite.New(dbPath, log)
+	st, err := sqlite.NewStorage(dbPath, log)
 	if err != nil {
 		log.Panic(err.Error())
 	}
 	log.Info("init storage")
 
 	// init router
-	r := api.NewRouter(st, log)
+	r := server.NewRouter(st, log)
+	r.Use(server.AuthMiddleware(log))
+	r.Use(server.CORSMiddleware)
+	r.Use(server.JSONRespMiddleware)
 	log.Info("init router")
 
 	// init server

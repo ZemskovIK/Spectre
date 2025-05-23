@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS letters (
     found_at TIMESTAMP NOT NULL,
     found_in VARCHAR(255) NOT NULL,
     author_id INT DEFAULT NULL,
+    access_level INTEGER DEFAULT 1,
     FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL
 );

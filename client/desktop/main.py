@@ -20,9 +20,57 @@ class MilitaryLettersApp:
         self.style.configure('TButton', font=('Arial', 10))
         self.style.configure('Header.TLabel', font=('Arial', 12, 'bold'))
         
-        self.api_url = "http://localhost:5000/api/letters"
-        self.create_widgets()
+        self.api_url = "http://localhost:5000"
+        self.token = None
+        
+        self.show_login_form()    
+        
+    def show_login_form(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        
+        login_frame = ttk.Frame(self.root, padding="20")
+        login_frame.pack(fill=BOTH, expand=True)
+        
+        ttk.Label(login_frame, text="Логин:", style='Header.TLabel').grid(row=0, column=0, pady=5, sticky=W)
+        self.login_entry = ttk.Entry(login_frame, width=30)
+        self.login_entry.grid(row=0, column=1, pady=5, padx=5)
+        
+        ttk.Label(login_frame, text="Пароль:", style='Header.TLabel').grid(row=1, column=0, pady=5, sticky=W)
+        self.password_entry = ttk.Entry(login_frame, width=30, show="*")
+        self.password_entry.grid(row=1, column=1, pady=5, padx=5)
+        
+        login_btn = ttk.Button(login_frame, text="Войти", command=self.perform_login)
+        login_btn.grid(row=2, column=1, pady=10, sticky=E)
     
+    def perform_login(self):
+        login = self.login_entry.get()
+        password = self.password_entry.get()
+        
+        if not login or not password:
+            messagebox.showerror("Ошибка", "Введите логин и пароль")
+            return
+        
+        try:
+            response = requests.post(
+                f"{self.api_url}/login",
+                json={"login": login, "password": password}
+            )
+            
+            if response.status_code == 200:
+                self.token = response.json().get("token")
+                self.show_main_interface()
+            else:
+                messagebox.showerror("Ошибка", "Неверный логин или пароль")
+        except requests.exceptions.RequestException as e:
+            messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
+    
+    def show_main_interface(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        
+        self.create_widgets()        
+
     def create_widgets(self):
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
@@ -31,6 +79,9 @@ class MilitaryLettersApp:
         self.header_frame.pack(fill=X, pady=[0, 10])
         
         ttk.Label(self.header_frame, text="Архив", style='Header.TLabel').pack(side=LEFT)
+        
+        logout_btn = ttk.Button(self.header_frame, text="Выйти", command=self.logout)
+        logout_btn.pack(side=RIGHT)
         
         self.tab_control = ttk.Notebook(self.main_frame)
         self.tab_control.pack(fill=BOTH, expand=True)
@@ -50,6 +101,28 @@ class MilitaryLettersApp:
         self.delete_tab = ttk.Frame(self.tab_control)
         self.tab_control.add(self.delete_tab, text='Удалить письмо')
         self.create_delete_tab()
+        
+    def logout(self):
+        self.token = None
+        self.show_login_form()
+    
+    def make_authenticated_request(self, method, url, **kwargs):
+        headers = kwargs.get('headers', {})
+        headers['Authorization'] = f'Bearer {self.token}'
+        kwargs['headers'] = headers
+        
+        try:
+            response = requests.request(method, url, **kwargs)
+            
+            if response.status_code == 401:
+                messagebox.showerror("Ошибка", "Сессия истекла. Пожалуйста, войдите снова.")
+                self.logout()
+                return None
+            
+            return response
+        except requests.exceptions.RequestException as e:
+            messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
+            return None
     
     def create_add_tab(self):
         frame = ttk.Frame(self.create_tab)
@@ -78,7 +151,7 @@ class MilitaryLettersApp:
         frame = ttk.Frame(self.read_tab)
         frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
         
-        ttk.Label(frame, text="ID письма:").grid(row=0, column=0, sticky=W, pady=5)
+        ttk.Label(frame, text="ID письма или авторя:").grid(row=0, column=0, sticky=W, pady=5)
         self.read_query = ttk.Entry(frame, width=50)
         self.read_query.grid(row=0, column=1, pady=5, padx=5)
         
@@ -152,7 +225,11 @@ class MilitaryLettersApp:
             return
         
         try:
-            response = requests.post(self.api_url, json=content)
+            response = self.make_authenticated_request(
+                "POST", 
+                f"{self.api_url}/letters",
+                json=content
+            )
             response_data = response.json()
            
             if response.status_code == 200 and response_data.get("error") is None:
@@ -164,29 +241,42 @@ class MilitaryLettersApp:
         except requests.exceptions.RequestException as e:
             messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
     
-    def search_letter(self): # GET /api/letters/{letter_id}
+    def search_letter(self):
         query = self.read_query.get()
         if not query:
-            messagebox.showerror("Ошибка", "Введите ID письма")
+            messagebox.showerror("Ошибка", "Введите ID письма или автора")
             return
         
         try:
-            if query.isdigit():
-                response = requests.get(f"{self.api_url}/{query}")
-                response_data = response.json()
-                if response.status_code == 200 and response_data.get("content"):
-                    self.display_results([response_data["content"]])
-                else:
-                    error_msg = response_data.get("error", "Письмо не найдено")
-                    messagebox.showerror("Ошибка", error_msg)
-                    self.display_results([])
-        except requests.exceptions.RequestException as e:
-            messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
+            response = self.make_authenticated_request(
+                "GET", 
+                f"{self.api_url}/letters"
+            )
+            if response.status_code == 200:
+                all_letters = response.json().get("content", [])
+                
+                results = []
+                for letter in all_letters:
+                    if query.isdigit() and letter.get("id") == int(query):
+                        results = [letter]
+                        break
+                    elif str(letter.get("author", "")).lower() == query.lower():
+                        results.append(letter)
+                
+                self.display_results(results)
+            else:
+                self.display_results([])
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Ошибка: {str(e)}")
 
     def get_all_letters(self): # GET /api/letters
         try:
-            response = requests.get(f"{self.api_url}")
+            response = self.make_authenticated_request(
+                "GET", 
+                f"{self.api_url}/letters"
+            )
             response_data = response.json()
+            print(response_data)
             
             self.results_body.config(state=NORMAL)
             self.results_body.delete("1.0", END)
@@ -221,24 +311,33 @@ class MilitaryLettersApp:
             return
             
         try:
-            response = requests.get(f"{self.api_url}/{letter_id}")
-            response_data = response.json()
+            response = self.make_authenticated_request(
+                "GET", 
+                f"{self.api_url}/letters"
+            )
             
-            if response.status_code == 200 and response_data.get("content"):
-                letter = response_data["content"]
+            if response.status_code == 200:
+                all_letters = response.json().get("content", [])
                 
-                self.update_author.delete(0, END)
-                self.update_body.delete("1.0", END)
-                self.update_found_at.delete(0, END)
-                self.update_found_in.delete(0, END)
-                
-                self.update_author.insert(0, letter.get('author', ''))
-                self.update_body.insert("1.0", letter.get('body', ''))
-                self.update_found_at.insert(0, letter.get('found_at', '')[:10])
-                self.update_found_in.insert(0, letter.get('found_in', ''))
+                found_letter = None
+                for letter in all_letters:
+                    if letter.get("id") == int(letter_id):
+                        found_letter = letter
+                        break
+
+                if found_letter:    
+                    self.update_author.delete(0, END)
+                    self.update_body.delete("1.0", END)
+                    self.update_found_at.delete(0, END)
+                    self.update_found_in.delete(0, END)
+                    
+                    self.update_author.insert(0, found_letter.get('author', ''))
+                    self.update_body.insert("1.0", found_letter.get('body', ''))
+                    self.update_found_at.insert(0, found_letter.get('found_at', '')[:10])
+                    self.update_found_in.insert(0, found_letter.get('found_in', ''))
                 
             else:
-                error_msg = response_data.get("error", "Письмо не найдено")
+                error_msg = found_letter.get("error", "Письмо не найдено")
                 messagebox.showerror("Ошибка", error_msg)
         except requests.exceptions.RequestException as e:
             messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
@@ -261,7 +360,11 @@ class MilitaryLettersApp:
             return
         
         try:
-            response = requests.put(f"{self.api_url}/{letter_id}", json=content)
+            response = self.make_authenticated_request(
+                "PUT", 
+                f"{self.api_url}/letters/{letter_id}",
+                json=content
+            )
             response_data = response.json()
             
             if response.status_code == 200 and response_data.get("error") is None:
@@ -280,7 +383,10 @@ class MilitaryLettersApp:
             return
         
         try:
-            response = requests.delete(f"{self.api_url}/{letter_id}")
+            response = self.make_authenticated_request(
+                "DELETE", 
+                f"{self.api_url}/letters/{letter_id}"
+            )
             response_data = response.json()
             
             if response.status_code == 200 and response_data.get("error") is None:

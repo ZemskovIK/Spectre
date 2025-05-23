@@ -6,9 +6,11 @@ import (
 )
 
 const (
-	UNK_NAME = ""
+	UNK_NAME     = ""
+	ADMIN_ALEVEL = 6 // max level in system
 )
 
+// SplitName splits a full name string into first, middle, and last name parts.
 func SplitName(name string) (string, string, string) {
 	names := strings.Split(name, " ")
 	switch len(names) {
@@ -23,8 +25,8 @@ func SplitName(name string) (string, string, string) {
 	}
 }
 
-// GetID returns the last post-/ part of pattern slited by point
-// ex: pattern '/api/point/1/2 point' 'GET /api/point/' : will return "1/2" -1 err
+// GetID extracts the numeric ID from a URL pattern after a given point.
+// Returns the string ID, integer ID, and error if conversion fails.
 func GetID(point, pattern string) (string, int, error) {
 	var sid string
 

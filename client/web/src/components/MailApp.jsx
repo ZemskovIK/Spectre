@@ -4,8 +4,13 @@ import ModalWindow from "./ModalWindow";
 import EmailList from "./EmailList";
 import SendFormSection from "./SendFormSection";
 import EditFormSection from "./EditFormSection";
+import Auth from "./Auth";
+import { jwtDecode } from "jwt-decode";
 
 export default function MailApp() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [author, setAuthor] = useState("");
@@ -23,28 +28,78 @@ export default function MailApp() {
   const [editingId, setEditingId] = useState(null);
   const [isError, setIsError] = useState("Писем нет");
   const [searchQuery, setSearchQuery] = useState("");
-  // const [listOfIndex, setListOfIndex] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    fetchMessages();
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setLoadingAuth(false);
+        return;
+      }
 
-    const intervalId = setInterval(fetchMessages, 60000);
+      try {
+        const response = await axios.get("http://localhost:5000/api/letters", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log(response);
+        setIsAuthenticated(true);
+        fetchMessages();
+      } catch (err) {
+        localStorage.removeItem("token");
+      } finally {
+        setLoadingAuth(false);
+      }
+    };
 
-    return () => clearInterval(intervalId);
+    checkAuth();
   }, []);
+
+  useEffect(() => {
+    const requestInterceptor = axios.interceptors.request.use((config) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const decoded = jwtDecode(token);
+        setIsAdmin(decoded.role);
+      }
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+
+    return () => {
+      axios.interceptors.request.eject(requestInterceptor);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsAuthenticated(false);
+    setMessages([]);
+  };
 
   const fetchMessages = async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/letters");
       if (response.data.error == null) {
         setMessages(response.data.content);
-        // setListOfIndex(response.data.content.map((item) => item.id));
       } else {
         setIsError(response.data.error);
       }
     } catch (error) {
-      console.error("ошибка отправки:", error);
+      console.error("Ошибка загрузки писем:", error);
+      if (error.response && error.response.status === 401) {
+        handleLogout();
+      }
     }
+    console.log(localStorage.getItem("token"));
+    const token = localStorage.getItem("token");
+    const secretKey = "test_secret";
+    const decoded = jwtDecode(token);
+
+    console.log(decoded.id);
+    console.log();
   };
 
   const filteredMessages = searchQuery.trim()
@@ -69,7 +124,6 @@ export default function MailApp() {
 
   const handleChange = (e) => {
     let value = e.target.value;
-
     value = value.replace(/[^\d]/g, "");
 
     if (value.length > 2) {
@@ -91,7 +145,10 @@ export default function MailApp() {
       await axios.delete(`http://localhost:5000/api/letters/${id}`);
       fetchMessages();
     } catch (error) {
-      console.error("ошибка удаления:", error);
+      console.error("Ошибка удаления:", error);
+      if (error.response && error.response.status === 401) {
+        handleLogout();
+      }
     } finally {
       setMessages(messages.filter((msg) => msg.id !== id));
       setDeletingId(null);
@@ -104,15 +161,13 @@ export default function MailApp() {
 
     setLoading(true);
     try {
-      console.log(newEditingMessage);
       const response = await axios.put(
         `http://localhost:5000/api/letters/${editingId}`,
         {
           body: newEditingMessage,
           author: editingAuthor.trim(),
           found_at: transDataToDima(editingDataInt.trim()),
-          found_in: editingFoundIn.trim(),
-          // id2: "1",
+          // found_in: editingFoundIn.trim(),
         }
       );
       fetchMessages();
@@ -123,7 +178,10 @@ export default function MailApp() {
       setEditingFoundIn("");
       setEditingId("");
     } catch (error) {
-      console.error("ошибка отправки:", error);
+      console.error("Ошибка редактирования:", error);
+      if (error.response && error.response.status === 401) {
+        handleLogout();
+      }
     } finally {
       setLoading(false);
     }
@@ -139,8 +197,7 @@ export default function MailApp() {
         body: newMessage,
         author: author.trim(),
         found_at: transDataToDima(dataInt.trim()),
-        found_in: foundIn.trim(),
-        // id2: "1",
+        // found_in: foundIn.trim(),
       });
       fetchMessages();
       setMessages([...messages, response.data]);
@@ -149,7 +206,10 @@ export default function MailApp() {
       setDataInt("");
       setFoundIn("");
     } catch (error) {
-      console.error("ошибка отправки:", error);
+      console.error("Ошибка отправки:", error);
+      if (error.response && error.response.status === 401) {
+        handleLogout();
+      }
     } finally {
       setLoading(false);
     }
@@ -160,12 +220,34 @@ export default function MailApp() {
     setShowModal(true);
   };
 
+  if (loadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl">Проверка авторизации...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Auth
+        setIsAuthenticated={setIsAuthenticated}
+        fetchMessages={fetchMessages}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen m-5">
-      {/* <div className="max-w-6xl mx-auto mb-6">
-        <h1 className="text-3xl font-bold text-blue-600">Spectre</h1>
-        <p className="text-gray-600">какая нибудь шапка</p>
-      </div> */}
+      {/* Кнопка выхода */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 text-white py-1 px-3 rounded-lg hover:bg-red-600 transition-colors"
+        >
+          Выйти
+        </button>
+      </div>
 
       <EmailList
         searchQuery={searchQuery}
@@ -176,35 +258,34 @@ export default function MailApp() {
         onDeleteEmail={deleteMessage}
         deletingId={deletingId}
       ></EmailList>
-      {/* w-full md:w-1/2 lg:w-3/4 xl:w-2/3 */}
-      <div className="lg:w-6xl 2xl:w-7xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
-        <button
-          onClick={handleChangeModes}
-          className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
-            isEditing
-              ? "bg-gray-500 hover:bg-gray-700"
-              : "bg-gray-600 hover:bg-gray-700"
-          }`}
-        >
-          Добавить новое письмо
-        </button>{" "}
-        <button
-          onClick={handleChangeModes}
-          className={`py-1 px-1 rounded-lg text-white font-medium text-2xl font-semibold mb-4 ${
-            isEditing
-              ? "bg-gray-600 hover:bg-gray-700"
-              : "bg-gray-500 hover:bg-gray-700"
-          }`}
-        >
-          Редактировать письмо
-        </button>
-        {isEditing == false ? (
-          <>
-            {" "}
+
+      {isAdmin == 6 ? (
+        <div className="lg:w-6xl 2xl:w-7xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
+          <button
+            onClick={handleChangeModes}
+            className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+              isEditing
+                ? "bg-gray-500 hover:bg-gray-700"
+                : "bg-gray-600 hover:bg-gray-700"
+            }`}
+          >
+            Добавить новое письмо
+          </button>{" "}
+          <button
+            onClick={handleChangeModes}
+            className={`py-1 px-1 rounded-lg text-white font-medium text-2xl font-semibold mb-4 ${
+              isEditing
+                ? "bg-gray-600 hover:bg-gray-700"
+                : "bg-gray-500 hover:bg-gray-700"
+            }`}
+          >
+            Редактировать письмо
+          </button>
+          {!isEditing ? (
             <form
               onSubmit={sendMessage}
               className="space-y-2"
-              autocomplete="off"
+              autoComplete="off"
             >
               <SendFormSection
                 handleChange={handleChange}
@@ -235,47 +316,53 @@ export default function MailApp() {
                     : "bg-gray-600 hover:bg-gray-700"
                 }`}
               >
-                {loading ? "отправка..." : "отправить"}
+                {loading ? "Отправка..." : "Отправить"}
               </button>
             </form>
-          </>
-        ) : (
-          <form onSubmit={editMessage} className="space-y-2" autocomplete="off">
-            <EditFormSection
-              handleChange={handleChange}
-              editingId={editingId}
-              setEditingId={setEditingId}
-              editingAuthor={editingAuthor}
-              editingDataInt={editingDataInt}
-              editingFoundIn={editingFoundIn}
-              newEditingMessage={newEditingMessage}
-              setEditingAuthor={setEditingAuthor}
-              setEditingDataInt={setEditingDataInt}
-              setEditingFoundIn={setEditingFoundIn}
-              setEditingNewMessage={setEditingNewMessage}
-            ></EditFormSection>
-            <button
-              type="submit"
-              disabled={
-                loading ||
-                !newEditingMessage.trim() ||
-                !editingAuthor.trim() ||
-                editingDataInt.length < 10
-              }
-              className={`px-6 py-2 rounded-lg text-white font-medium ${
-                loading ||
-                !newEditingMessage.trim() ||
-                !editingAuthor.trim() ||
-                editingDataInt.length < 10
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-gray-600 hover:bg-gray-700"
-              }`}
+          ) : (
+            <form
+              onSubmit={editMessage}
+              className="space-y-2"
+              autoComplete="off"
             >
-              {loading ? "отправка..." : "отправить"}
-            </button>
-          </form>
-        )}
-      </div>
+              <EditFormSection
+                handleChange={handleChange}
+                editingId={editingId}
+                setEditingId={setEditingId}
+                editingAuthor={editingAuthor}
+                editingDataInt={editingDataInt}
+                editingFoundIn={editingFoundIn}
+                newEditingMessage={newEditingMessage}
+                setEditingAuthor={setEditingAuthor}
+                setEditingDataInt={setEditingDataInt}
+                setEditingFoundIn={setEditingFoundIn}
+                setEditingNewMessage={setEditingNewMessage}
+              ></EditFormSection>
+              <button
+                type="submit"
+                disabled={
+                  loading ||
+                  !newEditingMessage.trim() ||
+                  !editingAuthor.trim() ||
+                  editingDataInt.length < 10
+                }
+                className={`px-6 py-2 rounded-lg text-white font-medium ${
+                  loading ||
+                  !newEditingMessage.trim() ||
+                  !editingAuthor.trim() ||
+                  editingDataInt.length < 10
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-gray-600 hover:bg-gray-700"
+                }`}
+              >
+                {loading ? "Отправка..." : "Сохранить"}
+              </button>
+            </form>
+          )}
+        </div>
+      ) : (
+        ""
+      )}
 
       {showModal && (
         <ModalWindow
