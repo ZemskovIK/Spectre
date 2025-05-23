@@ -2,15 +2,15 @@ import React, { useState } from "react";
 import axios from "axios";
 
 export default function Auth({ setIsAuthenticated, fetchMessages }) {
-  const [username, setUsername] = useState("");
+  const [login, setlogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:5000/api/login", {
-        username,
+      const response = await axios.post("http://localhost:5000/login", {
+        login,
         password,
       });
       localStorage.setItem("token", response.data.token);
@@ -34,8 +34,8 @@ export default function Auth({ setIsAuthenticated, fetchMessages }) {
             </label>
             <input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={login}
+              onChange={(e) => setlogin(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />

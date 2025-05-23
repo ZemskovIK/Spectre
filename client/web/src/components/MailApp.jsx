@@ -28,6 +28,7 @@ export default function MailApp() {
   const [editingId, setEditingId] = useState(null);
   const [isError, setIsError] = useState("Писем нет");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -57,6 +58,10 @@ export default function MailApp() {
   useEffect(() => {
     const requestInterceptor = axios.interceptors.request.use((config) => {
       const token = localStorage.getItem("token");
+      if (token) {
+        const decoded = jwtDecode(token);
+        setIsAdmin(decoded.role);
+      }
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -93,7 +98,8 @@ export default function MailApp() {
     const secretKey = "test_secret";
     const decoded = jwtDecode(token);
 
-    console.log(decoded);
+    console.log(decoded.id);
+    console.log();
   };
 
   const filteredMessages = searchQuery.trim()
@@ -253,7 +259,7 @@ export default function MailApp() {
         deletingId={deletingId}
       ></EmailList>
 
-      {localStorage.getItem("token").role == 6 ? (
+      {isAdmin == 6 ? (
         <div className="lg:w-6xl 2xl:w-7xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
           <button
             onClick={handleChangeModes}
