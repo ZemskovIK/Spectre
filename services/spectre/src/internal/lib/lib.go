@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	UNK_NAME = ""
+	UNK_NAME     = ""
+	ADMIN_ALEVEL = 6
 )
 
 func SplitName(name string) (string, string, string) {

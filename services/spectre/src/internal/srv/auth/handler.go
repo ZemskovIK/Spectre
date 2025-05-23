@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const GLOC = "src/internal/server/auth/handler.go/"
@@ -49,12 +50,12 @@ func (h *authHandler) Login(
 		response.ErrCannotGetUserByLogin(w, creds.Login)
 		return
 	}
-	// if err := bcrypt.CompareHashAndPassword( // ! TODO
-	// 	user.PHash,
-	// 	[]byte(creds.Password),
-	// ); err != nil {
+	if err := bcrypt.CompareHashAndPassword( // ! TODO
+		user.PHash,
+		[]byte(creds.Password),
+	); err != nil {
 
-	// }
+	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{ // ! WARN ES256
 		"sub":  user.ID,

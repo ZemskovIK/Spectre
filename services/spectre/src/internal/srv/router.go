@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"spectre/internal/srv/api"
+	"spectre/internal/srv/api/handlers"
 	"spectre/internal/srv/auth"
 	"spectre/internal/srv/methods"
 	st "spectre/internal/storage"
@@ -21,7 +22,7 @@ type Router struct {
 func NewRouter(s st.Storage, log *logger.Logger) *Router {
 	mux := http.NewServeMux()
 
-	lettersHL := api.NewLettersHandler(s, log)
+	lettersHL := handlers.NewLettersHandler(s, log)
 	authHL := auth.NewAuthHandler(s, log)
 
 	// CORS
