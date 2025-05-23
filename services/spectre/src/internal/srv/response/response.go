@@ -103,12 +103,12 @@ func ErrCannotGetUserByLogin(w http.ResponseWriter, login string) {
 	json.NewEncoder(w).Encode(r)
 }
 
-func ErrBlockedToGet(w http.ResponseWriter, usrAL, letterAL int) {
+func ErrBlockedToGet(w http.ResponseWriter, usrAL, neededAL int) {
 	w.WriteHeader(http.StatusForbidden)
 	r := NewResponse(
 		nil,
 		fmt.Sprintf("blocked to get letter with access level %d with your level %d",
-			letterAL,
+			neededAL,
 			usrAL,
 		),
 	)
@@ -118,5 +118,11 @@ func ErrBlockedToGet(w http.ResponseWriter, usrAL, letterAL int) {
 func ErrYouArntAdmin(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusForbidden)
 	r := NewResponse(nil, "you have not access to admin panel!")
+	json.NewEncoder(w).Encode(r)
+}
+
+func ErrFailedToRetrieveUsers(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusInternalServerError)
+	r := NewResponse(nil, "failed to retrieve users")
 	json.NewEncoder(w).Encode(r)
 }

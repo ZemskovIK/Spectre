@@ -19,10 +19,15 @@ type Router struct {
 	mux http.Handler
 }
 
+type apiHandler interface {
+	GetAll(w http.ResponseWriter, r *http.Request)
+}
+
 func NewRouter(s st.Storage, log *logger.Logger) *Router {
 	mux := http.NewServeMux()
 
 	lettersHL := handlers.NewLettersHandler(s, log)
+	usersHL := handlers.NewUsersHandler(s, log)
 	authHL := auth.NewAuthHandler(s, log)
 
 	// CORS
@@ -34,6 +39,8 @@ func NewRouter(s st.Storage, log *logger.Logger) *Router {
 	)
 
 	// api
+
+	// letters
 	mux.Handle(methods.GET(api.LETTERS_POINT),
 		http.HandlerFunc(lettersHL.GetAll),
 	)
@@ -48,6 +55,11 @@ func NewRouter(s st.Storage, log *logger.Logger) *Router {
 	)
 	mux.Handle(methods.POST(api.LETTERS_POINT),
 		http.HandlerFunc(lettersHL.Add),
+	)
+
+	// users
+	mux.Handle(methods.GET(api.USERS_POINT),
+		http.HandlerFunc(usersHL.GetAll),
 	)
 
 	// auth
