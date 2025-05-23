@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"spectre/internal/server"
+	server "spectre/internal/srv"
 	"spectre/internal/storage/sqlite"
 	"spectre/pkg/logger"
 	"syscall"
