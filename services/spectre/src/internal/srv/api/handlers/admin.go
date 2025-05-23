@@ -1,35 +1,39 @@
-package api
+package handlers
+
+// ! TODO : think about copy-paste
 
 import (
 	"encoding/json"
 	"net/http"
 	"spectre/internal/lib"
 	"spectre/internal/models"
+	"spectre/internal/srv/api"
 	"spectre/internal/srv/response"
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"
 )
 
-const GLOC = "src/internal/api/handlers.go/"
+const GLOC_ADM = "src/internal/api/handlers/admin.go"
 
-type lettersStore interface {
-	Get(id int) (models.Letter, error) // TODO
-	Save(letter models.Letter) error
-	Delete(id int) error
-	Update(letter models.Letter) error
+type adminStore interface {
+	SaveUser(id int) error
+	UpdateUser(usr models.User) error
+	DeleteUser(id int) error
 
-	GetAllWithAccess(accessLevel int) ([]models.Letter, error)
+	SaveLetter(letter models.Letter) error
+	UpdateLetter(letter models.Letter) error
+	DeleteLetter(id int) error
 }
 
-type lettersHandler struct {
-	st  lettersStore
+type adminHandler struct {
+	st  adminStore
 	log *logger.Logger
 }
 
-func NewLettersHandler(
-	s lettersStore, log *logger.Logger,
-) *lettersHandler {
-	return &lettersHandler{
+func NewAdminHandler(
+	s adminStore, log *logger.Logger,
+) *adminHandler {
+	return &adminHandler{
 		st:  s,
 		log: log,
 	}
@@ -41,15 +45,14 @@ func (h *lettersHandler) GetAll(
 	loc := GLOC + "getAll()"
 	h.log.Infof("%s: retrieving all letters", loc)
 
-	accessLevelRaw := r.Context().Value(lib.UserAccessLevelKey)
-	accessLevel, ok := accessLevelRaw.(float64)
+	accessLevel, ok := lib.FetchAccessLevelFromCtx(r.Context())
 	if !ok {
 		h.log.Errorf("%s: access level not found or wrong type", loc)
 		response.ErrFailedToRetrieveLetters(w)
 		return
 	}
 
-	letters, err := h.st.GetAllWithAccess(int(accessLevel))
+	letters, err := h.st.GetAllWithAccess(accessLevel)
 	if err != nil {
 		h.log.Errorf("%s: failed to retrieve letters: %v", loc, err)
 		response.ErrFailedToRetrieveLetters(w)
@@ -71,7 +74,13 @@ func (h *lettersHandler) GetOne(
 	loc := GLOC + "getOne()"
 	h.log.Infof("%s: retrieving a single letter", loc)
 
-	sid, id, err := lib.GetID(LETTER_POINT, r.RequestURI)
+	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
+	if !ok {
+		response.ErrFailedToRetrieveLetters(w)
+		return
+	}
+
+	sid, id, err := lib.GetID(api.LETTER_POINT, r.RequestURI)
 	if err != nil {
 		h.log.Errorf("%s: invalid id %s : %v", loc, sid, err)
 		response.ErrInvalidID(w, sid)
@@ -79,7 +88,7 @@ func (h *lettersHandler) GetOne(
 	}
 
 	h.log.Infof("%s: retrieving letter with id: %d", loc, id)
-	letter, err := h.st.Get(id)
+	letter, err := h.st.GetByID(id)
 	if err != nil {
 		if err.Error() == st.ErrLetterNotFound(id).Error() {
 			h.log.Warnf("%s: letter not found with id: %d", loc, id)
@@ -92,6 +101,11 @@ func (h *lettersHandler) GetOne(
 		return
 	}
 
+	if usrAccess < letter.AccessLevel {
+		response.ErrBlockedToGet(w, usrAccess, letter.AccessLevel)
+		return
+	}
+
 	response.Ok(w, letter)
 }
 
@@ -100,7 +114,7 @@ func (h *lettersHandler) Delete(
 ) {
 	loc := GLOC + "delete()"
 
-	sid, id, err := lib.GetID(LETTER_POINT, r.RequestURI)
+	sid, id, err := lib.GetID(api.LETTER_POINT, r.RequestURI)
 	if err != nil {
 		h.log.Errorf("%s: invalid id %s : %v", loc, sid, err)
 		response.ErrInvalidID(w, sid)
@@ -125,6 +139,16 @@ func (h *lettersHandler) Add(
 ) {
 	loc := GLOC + "add()"
 	h.log.Infof("%s: adding new letter", loc)
+
+	usrAccessLevel, ok := lib.FetchAccessLevelFromCtx(r.Context())
+	if !ok {
+		response.ErrCannotUpdate(w)
+		return
+	}
+	if usrAccessLevel < lib.ADMIN_ALEVEL {
+		response.ErrYouArntAdmin(w)
+		return
+	}
 
 	var letter models.Letter
 	if err := json.NewDecoder(r.Body).Decode(&letter); err != nil {
@@ -164,7 +188,17 @@ func (h *lettersHandler) Update(
 	log := GLOC + "update()"
 	h.log.Infof("%s: updating letter", log)
 
-	sid, id, err := lib.GetID(LETTER_POINT, r.RequestURI)
+	usrAccessLevel, ok := lib.FetchAccessLevelFromCtx(r.Context())
+	if !ok {
+		response.ErrCannotUpdate(w)
+		return
+	}
+	if usrAccessLevel < lib.ADMIN_ALEVEL {
+		response.ErrYouArntAdmin(w)
+		return
+	}
+
+	sid, id, err := lib.GetID(api.LETTER_POINT, r.RequestURI)
 	if err != nil {
 		h.log.Errorf("%s: invalid id %s : %v", log, sid, err)
 		response.ErrInvalidID(w, sid)

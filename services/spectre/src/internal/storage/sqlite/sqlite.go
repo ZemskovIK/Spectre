@@ -38,7 +38,7 @@ func NewStorage(dbPath string, log *logger.Logger) (st.Storage, error) {
 }
 
 // Get retrieves a letter by id from db
-func (s *sqliteDB) Get(id int) (models.Letter, error) {
+func (s *sqliteDB) GetLetterByID(id int) (models.Letter, error) {
 	loc := GLOC + "Get()"
 	s.log.Debugf("%s: preparing to get letter with id: %d", loc, id)
 
@@ -68,7 +68,7 @@ func (s *sqliteDB) Get(id int) (models.Letter, error) {
 }
 
 // Save saves a letter to db
-func (s *sqliteDB) Save(letter models.Letter) error {
+func (s *sqliteDB) SaveLetter(letter models.Letter) error {
 	loc := GLOC + "Save()"
 	s.log.Debugf("%s: preparing to save letter: %+v", loc, letter)
 
@@ -96,7 +96,7 @@ func (s *sqliteDB) Save(letter models.Letter) error {
 	return nil
 }
 
-func (s *sqliteDB) Delete(id int) error {
+func (s *sqliteDB) DeleteLetter(id int) error {
 	loc := GLOC + "Delete()"
 	s.log.Debugf("%s: preparing to delete letter with id: %d", loc, id)
 
@@ -124,7 +124,7 @@ func (s *sqliteDB) Delete(id int) error {
 	return nil
 }
 
-func (s *sqliteDB) Update(letter models.Letter) error {
+func (s *sqliteDB) UpdateLetter(letter models.Letter) error {
 	loc := GLOC + "Update()"
 	s.log.Debugf("%s: preparing to update letter: %+v", loc, letter)
 
@@ -162,7 +162,7 @@ func (s *sqliteDB) Update(letter models.Letter) error {
 	return nil
 }
 
-func (s *sqliteDB) GetAllWithAccess(accessLevel int) ([]models.Letter, error) {
+func (s *sqliteDB) GetAllLettersWithAccess(accessLevel int) ([]models.Letter, error) {
 	loc := GLOC + "GetAll()"
 	s.log.Debugf("%s: preparing to get all letters", loc)
 
@@ -256,13 +256,6 @@ func (s *sqliteDB) getOrCreateAuthor(name string) (int, error) {
 	s.log.Infof("%s: successfully added author '%s' with id %d", loc, name, uid)
 	return int(uid), nil
 }
-
-// CREATE TABLE IF NOT EXISTS users (
-//     id INTEGER PRIMARY KEY AUTOINCREMENT,
-//     login VARCHAR(200) UNIQUE NOT NULL,
-//     phash BLOB NOT NULL,
-//     access_level INTEGER DEFAULT 1
-// );
 
 func (s *sqliteDB) GetUserByLogin(login string) (models.User, error) {
 	loc := GLOC + "GetUserByLogin()"

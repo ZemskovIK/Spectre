@@ -1,7 +1,10 @@
 package response
 
+// ! TODO : think about copy-paste
+
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -97,5 +100,23 @@ func ErrCannotSignIn(w http.ResponseWriter) {
 func ErrCannotGetUserByLogin(w http.ResponseWriter, login string) {
 	w.WriteHeader(http.StatusInternalServerError)
 	r := NewResponse(nil, "cannot get user by login: "+login)
+	json.NewEncoder(w).Encode(r)
+}
+
+func ErrBlockedToGet(w http.ResponseWriter, usrAL, letterAL int) {
+	w.WriteHeader(http.StatusForbidden)
+	r := NewResponse(
+		nil,
+		fmt.Sprintf("blocked to get letter with access level %d with your level %d",
+			letterAL,
+			usrAL,
+		),
+	)
+	json.NewEncoder(w).Encode(r)
+}
+
+func ErrYouArntAdmin(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusForbidden)
+	r := NewResponse(nil, "you have not access to admin panel!")
 	json.NewEncoder(w).Encode(r)
 }
