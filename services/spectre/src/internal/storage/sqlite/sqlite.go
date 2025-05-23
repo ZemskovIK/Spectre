@@ -284,3 +284,15 @@ func (s *sqliteDB) GetUserByLogin(login string) (models.User, error) {
 
 	return models.User{}, nil
 }
+
+func (s *sqliteDB) SaveUser(id int) error {
+	return nil
+}
+
+func (s *sqliteDB) DeleteUser(id int) error {
+	return nil
+}
+
+func (s *sqliteDB) UpdateUser(usr models.User) error {
+	return nil
+}

@@ -16,15 +16,3 @@ type Storage interface {
 	DeleteUser(id int) error
 	UpdateUser(usr models.User) error
 }
-
-// asd.com:PORT
-// PORT /enctypt_bytes POST -> json
-```
-{
-  "content": { ... },   // полезная нагрузка (зашифрованные данные)
-  "error": null | string, // описание ошибки, если она есть
-  "iv": "base64",       // IV (инициализационный вектор) для расшифровки
-  "hmac": "base64",     // HMAC для проверки целостности
-  "nonce": "base64"     // nonce, если используется
-}
-```
