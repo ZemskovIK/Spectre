@@ -8,7 +8,7 @@ import (
 	"spectre/pkg/logger"
 )
 
-const GLOC_USRS = "src/internal/api/handlers/users.go"
+const GLOC_USRS = "src/internal/api/handlers/users.go" // for logging
 
 type usersStore interface {
 	GetUserByLogin(login string) (models.User, error)
@@ -32,16 +32,18 @@ func NewUsersHandler(
 	}
 }
 
+// GetAll returns all users (admin only).
 func (h *usersHandler) GetAll(
 	w http.ResponseWriter, r *http.Request,
 ) {
-	loc := GLOC_USRS + "getAll()"
-	h.log.Infof("%s: retrieving all users", loc)
+	loc := GLOC_USRS + "GetAll()"
+	h.log.Infof("%s: handler called", loc)
+	h.log.Debugf("%s: request: %+v", loc, r)
 
 	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
 	if !ok {
-		h.log.Errorf("%s: access level not found or wrong type", loc)
-		response.ErrFailedToRetrieveUsers(w)
+		h.log.Errorf("%s: failed to fetch access level from context", loc)
+		response.ErrCannotRetrieveUsers(w)
 		return
 	}
 
@@ -53,8 +55,8 @@ func (h *usersHandler) GetAll(
 
 	users, err := h.st.GetAllUsers()
 	if err != nil {
-		h.log.Errorf("%s: failed to retrieve users: %v", loc, err)
-		response.ErrFailedToRetrieveUsers(w)
+		h.log.Errorf("%s: failed to retrieve users from storage: %v", loc, err)
+		response.ErrCannotRetrieveUsers(w)
 		return
 	}
 
@@ -64,8 +66,6 @@ func (h *usersHandler) GetAll(
 		return
 	}
 
-	// ! TODO : encrypt
-
-	h.log.Infof("%s: successfully retrieved %d users", loc, len(users))
+	h.log.Debugf("%s: successfully retrieved %d users", loc, len(users))
 	response.Ok(w, users)
 }

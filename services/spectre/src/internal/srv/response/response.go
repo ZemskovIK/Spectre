@@ -8,6 +8,7 @@ import (
 	"net/http"
 )
 
+// Response is a standard API response structure.
 type Response struct {
 	Content interface{} `json:"content"`
 	Error   interface{} `json:"error"`
@@ -17,6 +18,7 @@ type Response struct {
 	Nonce string `json:"nonce"`
 }
 
+// NewResponse creates a new Response object.
 func NewResponse(content interface{}, err interface{}) Response {
 	return Response{
 		Content: content,
@@ -24,7 +26,7 @@ func NewResponse(content interface{}, err interface{}) Response {
 	}
 }
 
-// Ok wrap data to json ok response
+// Ok wraps data in a successful JSON response.
 func Ok(w http.ResponseWriter, content interface{}) {
 	r := Response{
 		Content: content,
@@ -32,97 +34,89 @@ func Ok(w http.ResponseWriter, content interface{}) {
 	json.NewEncoder(w).Encode(r)
 }
 
+// JWTOk sends a JSON response with a JWT token.
 func JWTOk(w http.ResponseWriter, token string) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
-func ErrFailedToRetrieveLetters(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusInternalServerError)
-	r := NewResponse(nil, "failed to retrieve letters")
-	json.NewEncoder(w).Encode(r)
-}
-
-func ErrInvalidID(w http.ResponseWriter, sid string) {
-	w.WriteHeader(http.StatusBadRequest)
-	r := NewResponse(nil, "invalid id: "+sid)
-	json.NewEncoder(w).Encode(r)
-}
-
-func ErrNotFound(w http.ResponseWriter, sid string) {
-	w.WriteHeader(http.StatusNotFound)
-	r := NewResponse(nil, "letter with id "+sid+" not found")
-	json.NewEncoder(w).Encode(r)
-}
-
-func ErrCannotGetWithID(w http.ResponseWriter, sid string) {
-	w.WriteHeader(http.StatusInternalServerError)
-	r := NewResponse(nil, "cannot get with id "+sid)
-	json.NewEncoder(w).Encode(r)
-}
-
-func ErrCannotDeleteWithID(w http.ResponseWriter, sid string) {
-	w.WriteHeader(http.StatusInternalServerError)
-	r := NewResponse(nil, "cannot delete with id "+sid)
-	json.NewEncoder(w).Encode(r)
-}
-
-func ErrInvalidRequest(w http.ResponseWriter, msg string) {
-	w.WriteHeader(http.StatusBadRequest)
+// WriteError sends an error response with a given status and message.
+func WriteError(w http.ResponseWriter, status int, msg string) {
+	w.WriteHeader(status)
 	r := NewResponse(nil, msg)
 	json.NewEncoder(w).Encode(r)
 }
 
+// ErrInvalidID sends a 400 error for invalid ID.
+func ErrInvalidID(w http.ResponseWriter, sid string) {
+	WriteError(w, http.StatusBadRequest, "invalid id: "+sid)
+}
+
+// ErrNotFound sends a 404 error when a letter is not found.
+func ErrNotFound(w http.ResponseWriter, sid string) {
+	WriteError(w, http.StatusNotFound, "letter with id "+sid+" not found")
+}
+
+// ErrCannotGetWithID sends a 500 error when unable to get by ID.
+func ErrCannotGetWithID(w http.ResponseWriter, sid string) {
+	WriteError(w, http.StatusInternalServerError, "cannot get with id "+sid)
+}
+
+// ErrCannotDeleteWithID sends a 500 error when unable to delete by ID.
+func ErrCannotDeleteWithID(w http.ResponseWriter, sid string) {
+	WriteError(w, http.StatusInternalServerError, "cannot delete with id "+sid)
+}
+
+// ErrInvalidRequest sends a 400 error for invalid requests.
+func ErrInvalidRequest(w http.ResponseWriter, msg string) {
+	WriteError(w, http.StatusBadRequest, msg)
+}
+
+// ErrCannotSave sends a 422 error when unable to save.
 func ErrCannotSave(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusUnprocessableEntity)
-	r := NewResponse(nil, "cannot save!")
-	json.NewEncoder(w).Encode(r)
+	WriteError(w, http.StatusUnprocessableEntity, "cannot save!")
 }
 
+// ErrCannotUpdate sends a 500 error when unable to update.
 func ErrCannotUpdate(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusInternalServerError)
-	r := NewResponse(nil, "cannot update!")
-	json.NewEncoder(w).Encode(r)
+	WriteError(w, http.StatusInternalServerError, "cannot update!")
 }
 
+// ErrCannotGetCredsFromJSON sends a 500 error when unable to get credentials from JSON.
 func ErrCannotGetCredsFromJSON(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusInternalServerError)
-	r := NewResponse(nil, "cannot get creds from json!")
-	json.NewEncoder(w).Encode(r)
+	WriteError(w, http.StatusInternalServerError, "cannot get creds from json!")
 }
 
+// ErrCannotSignIn sends a 500 error when sign-in fails.
 func ErrCannotSignIn(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusInternalServerError)
-	r := NewResponse(nil, "cannot sign in with jwt!")
-	json.NewEncoder(w).Encode(r)
+	WriteError(w, http.StatusInternalServerError, "cannot sign in with jwt!")
 }
 
+// ErrCannotGetUserByLogin sends a 500 error when unable to get user by login.
 func ErrCannotGetUserByLogin(w http.ResponseWriter, login string) {
-	w.WriteHeader(http.StatusInternalServerError)
-	r := NewResponse(nil, "cannot get user by login: "+login)
-	json.NewEncoder(w).Encode(r)
+	WriteError(w, http.StatusInternalServerError, "cannot get user by login: "+login)
 }
 
+// ErrBlockedToGet sends a 403 error when access is blocked due to insufficient level.
 func ErrBlockedToGet(w http.ResponseWriter, usrAL, neededAL int) {
-	w.WriteHeader(http.StatusForbidden)
-	r := NewResponse(
-		nil,
-		fmt.Sprintf("blocked to get letter with access level %d with your level %d",
-			neededAL,
-			usrAL,
-		),
+	WriteError(
+		w,
+		http.StatusForbidden,
+		fmt.Sprintf("blocked to get letter with access level %d with your level %d", neededAL, usrAL),
 	)
-	json.NewEncoder(w).Encode(r)
 }
 
+// ErrYouArntAdmin sends a 403 error when user is not admin.
 func ErrYouArntAdmin(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusForbidden)
-	r := NewResponse(nil, "you have not access to admin panel!")
-	json.NewEncoder(w).Encode(r)
+	WriteError(w, http.StatusForbidden, "you have not access to admin panel!")
 }
 
-func ErrFailedToRetrieveUsers(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusInternalServerError)
-	r := NewResponse(nil, "failed to retrieve users")
-	json.NewEncoder(w).Encode(r)
+// ErrCannotRetrieveLetters sends a 500 error when letters cannot be retrieved.
+func ErrCannotRetrieveLetters(w http.ResponseWriter) {
+	WriteError(w, http.StatusInternalServerError, "cannot retrieve letters")
+}
+
+// ErrCannotRetrieveUsers sends a 500 error when users cannot be retrieved.
+func ErrCannotRetrieveUsers(w http.ResponseWriter) {
+	WriteError(w, http.StatusInternalServerError, "cannot retrieve users")
 }
