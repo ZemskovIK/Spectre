@@ -1,13 +1,10 @@
 import base64
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from cryptography.hazmat.primitives import hashes, serialization
-\
+# from cryptography.hazmat.primitives import hashes, serialization
 import os
 import hmac as hmac_std
 # from typing import Dict
-
-
 from cryptography.hazmat.primitives import (
     hashes, serialization, padding, hmac
 )
@@ -117,13 +114,13 @@ def main():
 
     if server.aes_key != client.aes_key: "AES ключи не совпадают!"
     if server.hmac_key != client.hmac_key: "HMAC ключи не совпадают!"
-    print(f"{server.aes_key}\n{client.aes_key} ")
+    print(f"{server.aes_key}\n{server.hmac_key} ")
 
     # Тест шифрования
     crypto_box = Aes256CbcHmac(server.aes_key, server.hmac_key)
     
     nonce = os.urandom(12) # сделать системным
-    
+
     plaintext = b"Bebra koroli - mbl B PoToKe"
     encrypted_text = crypto_box.encrypt(plaintext, nonce)
     print("Encrypted text:", encrypted_text)
