@@ -19,7 +19,8 @@ func (s *sqliteDB) GetLetterByID(id int) (models.Letter, error) {
 	loc := GLOC_LTS + "GetLetterByID()"
 	s.log.Infof("%s: called for id=%d", loc, id)
 
-	query := `SELECT l.id, l.body, l.found_at, l.found_in
+	query := `SELECT l.id, l.body, l.found_at, l.found_in,
+			  TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
               FROM letters l
               LEFT JOIN authors a ON l.author_id = a.id
               WHERE l.id = ?`
@@ -31,6 +32,7 @@ func (s *sqliteDB) GetLetterByID(id int) (models.Letter, error) {
 		&letter.Body,
 		&letter.FoundAt,
 		&letter.FoundIn,
+		&letter.Author,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			s.log.Warnf("%s: letter not found with id %d", loc, id)
