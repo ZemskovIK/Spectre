@@ -305,7 +305,6 @@ class MilitaryLettersApp:
                 f"{self.api_url}/api/letters"
             )
             response_data = response.json()
-            print(response_data)
             
             self.results_body.config(state=NORMAL)
             self.results_body.delete("1.0", END)
