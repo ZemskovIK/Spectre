@@ -341,31 +341,26 @@ class MilitaryLettersApp:
         try:
             response = self.make_authenticated_request(
                 "GET", 
-                f"{self.api_url}/api/letters"
+                f"{self.api_url}/api/letters/{letter_id}"
             )
             
             if response.status_code == 200:
-                all_letters = response.json().get("content", [])
-                
-                found_letter = None
-                for letter in all_letters:
-                    if letter.get("id") == int(letter_id):
-                        found_letter = letter
-                        break
+                letter_data = response.json().get("content")
 
-                if found_letter:    
+                if letter_data:    
                     self.update_author.delete(0, END)
                     self.update_body.delete("1.0", END)
                     self.update_found_at.delete(0, END)
                     self.update_found_in.delete(0, END)
                     
-                    self.update_author.insert(0, found_letter.get('author', ''))
-                    self.update_body.insert("1.0", found_letter.get('body', ''))
-                    self.update_found_at.insert(0, found_letter.get('found_at', '')[:10])
-                    self.update_found_in.insert(0, found_letter.get('found_in', ''))
-                
+                    self.update_author.insert(0, letter_data.get('author', ''))
+                    self.update_body.insert("1.0", letter_data.get('body', ''))
+                    self.update_found_at.insert(0, letter_data.get('found_at', '')[:10])
+                    self.update_found_in.insert(0, letter_data.get('found_in', ''))
+                else:
+                    messagebox.showerror("Ошибка", "Данные письма не получены")
             else:
-                error_msg = found_letter.get("error", "Письмо не найдено")
+                error_msg = response.json().get("error", "Письмо не найдено")
                 messagebox.showerror("Ошибка", error_msg)
         except requests.exceptions.RequestException as e:
             messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
