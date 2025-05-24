@@ -125,10 +125,12 @@ func ErrCannotRetrieveUsers(w http.ResponseWriter) {
 	WriteError(w, http.StatusInternalServerError, "cannot retrieve users")
 }
 
+// ErrCannotGetB64Strings sends a 500 error when data cannot be converted to base64.
 func ErrCannotGetB64Strings(w http.ResponseWriter) {
 	WriteError(w, http.StatusInternalServerError, "cannot convert data to base64")
 }
 
+// ErrCannotEncryptData sends a 502 error when encryption service is unavailable or failed.
 func ErrCannotEncryptData(w http.ResponseWriter) {
 	WriteError(w, http.StatusBadGateway, "cannot encrypt data!")
 }

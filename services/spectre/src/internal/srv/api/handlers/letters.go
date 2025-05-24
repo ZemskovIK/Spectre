@@ -5,11 +5,11 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"spectre/internal/lib"
 	"spectre/internal/models"
 	"spectre/internal/srv/api"
+	"spectre/internal/srv/lib"
+	"spectre/internal/srv/lib/response"
 	"spectre/internal/srv/proxy"
-	"spectre/internal/srv/response"
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"
 )

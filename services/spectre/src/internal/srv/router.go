@@ -6,7 +6,7 @@ import (
 	"spectre/internal/srv/api"
 	"spectre/internal/srv/api/handlers"
 	"spectre/internal/srv/auth"
-	"spectre/internal/srv/methods"
+	"spectre/internal/srv/lib/methods"
 	"spectre/internal/srv/proxy"
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 )
 
+// ToBase64 marshals any Go value to JSON and encodes the result as a base64 string.
+// Returns the base64-encoded string or an error if marshalling fails.
 func ToBase64(data interface{}) (string, error) {
 	bytes, err := json.Marshal(data)
 	if err != nil {
@@ -15,6 +17,9 @@ func ToBase64(data interface{}) (string, error) {
 	return b64, nil
 }
 
+// ToBase64Slice encodes a slice of any type to a slice of base64 strings.
+// Each element is marshaled to JSON and then encoded as base64.
+// Returns a slice of base64-encoded strings or an error if any element fails to encode.
 func ToBase64Slice[T any](data []T) ([]string, error) {
 	res := make([]string, 0, len(data))
 	for _, v := range data {

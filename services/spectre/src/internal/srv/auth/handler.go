@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"spectre/internal/models"
-	"spectre/internal/srv/response"
+	"spectre/internal/srv/lib/response"
 	"spectre/pkg/logger"
 	"time"
 

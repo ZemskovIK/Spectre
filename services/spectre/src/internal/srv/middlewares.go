@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	"net/http"
-	"spectre/internal/lib"
 	"spectre/internal/srv/auth"
+	"spectre/internal/srv/lib"
 	"spectre/pkg/logger"
 	"strings"
 	"time"

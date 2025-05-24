@@ -4,24 +4,29 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"spectre/internal/srv/response"
+	"spectre/internal/srv/lib/response"
 	"time"
 )
 
+// CryptoClient provides methods for interacting with an external encryption service.
 type CryptoClient struct {
-	EncryptEndpoint string
-	DecryptEndpoint string
-	Client          *http.Client
+	EncryptEndpoint string       // URL of the encryption endpoint
+	DecryptEndpoint string       // URL of the decryption endpoint
+	Client          *http.Client // HTTP client for requests
 }
 
+// NewCryptoClient creates a new CryptoClient instance.
+// epoint is the encryption endpoint URL, dpoint is the decryption endpoint URL.
 func NewCryptoClient(epoint, dpoint string) *CryptoClient {
 	return &CryptoClient{
 		EncryptEndpoint: epoint,
 		DecryptEndpoint: dpoint,
-		Client:          &http.Client{Timeout: 5 * time.Second}, // ! TODO : cfg
+		Client:          &http.Client{Timeout: 5 * time.Second}, // TODO: move to config
 	}
 }
 
+// Encrypt sends a slice of base64 strings to the external encryption service.
+// Returns a response.Response struct with the result or an error.
 func (c *CryptoClient) Encrypt(b64 []string) (response.Response, error) {
 	reqBody, err := json.Marshal(map[string][]string{
 		"content": b64,

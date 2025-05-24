@@ -4,8 +4,8 @@ package sqlite
 
 import (
 	"database/sql"
-	"spectre/internal/lib"
 	"spectre/internal/models"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -229,12 +229,27 @@ func (s *sqliteDB) GetAllLetters() ([]models.Letter, error) {
 	return letters, nil
 }
 
+// splitName splits a full name string into first, middle, and last name parts.
+func splitName(name string) (string, string, string) {
+	names := strings.Split(name, " ")
+	switch len(names) {
+	case 1:
+		return names[0], UNK_NAME, UNK_NAME
+	case 2:
+		return names[0], names[1], UNK_NAME
+	case 3:
+		return names[0], names[1], names[2]
+	default:
+		return names[0], names[1], strings.Join(names[2:], " ")
+	}
+}
+
 // getOrCreateAuthor checks if an author exists in the database, and creates one if not. Returns the author ID.
 func (s *sqliteDB) getOrCreateAuthor(name string) (int, error) {
 	loc := GLOC_LTS + "getOrCreateAuthor()"
 	s.log.Infof("%s: called for name='%s'", loc, name)
 
-	var fname, mname, lname string = lib.SplitName(name)
+	var fname, mname, lname string = splitName(name)
 	var id int
 
 	query := `SELECT id, fname, mname, lname

@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"net/http"
-	"spectre/internal/lib"
 	"spectre/internal/models"
-	"spectre/internal/srv/response"
+	"spectre/internal/srv/lib"
+	"spectre/internal/srv/lib/response"
 	"spectre/pkg/logger"
 )
 
