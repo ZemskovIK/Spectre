@@ -68,14 +68,16 @@ class Aes256CbcHmac:
 
         return {
             "iv": base64.b64encode(iv).decode(),
-            "ciphertext": base64.b64encode(ciphertext).decode(),
+            "content": base64.b64encode(ciphertext).decode(),
             "nonce": base64.b64encode(nonce).decode(),
             "hmac": base64.b64encode(tag).decode()
         }
 
     def decrypt(self, data: dict[str, str]) -> bytes:
         iv = base64.b64decode(data["iv"])
-        ciphertext = base64.b64decode(data["ciphertext"])
+        print(f"\ncrypto.py | data['content']: {data["content"]}\n")
+        ciphertext = base64.b64decode(data["content"])
+        print("\n\n\nERROR\n\n\n")
         nonce = base64.b64decode(data["nonce"])
         tag = base64.b64decode(data["hmac"])
 
@@ -126,7 +128,7 @@ def main():
     print("Encrypted text:", encrypted_text)
 
     decrypted_text = crypto_box.decrypt(encrypted_text)
-    print("Decrypted text:", decrypted_text.decode())
+    print("Decrypted text:", decrypted_text)
 
 
 if __name__ == "__main__":
