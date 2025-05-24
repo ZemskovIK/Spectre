@@ -1,6 +1,7 @@
 from  tkinter import *
 from tkinter import ttk, messagebox
 import requests
+import jwt
 
 class MilitaryLettersApp:
     def __init__(self, root):
@@ -59,6 +60,12 @@ class MilitaryLettersApp:
             
             if response.status_code == 200:
                 self.token = response.json().get("token")
+                try:
+                    payload = jwt.decode(self.token, "test_secret", algorithms=["HS256"])
+                    self.user_role = payload.get("role", 1)
+                except:
+                    self.user_role = 1
+                    
                 self.show_main_interface()
             else:
                 messagebox.showerror("Ошибка", "Неверный логин или пароль")
@@ -86,21 +93,22 @@ class MilitaryLettersApp:
         self.tab_control = ttk.Notebook(self.main_frame)
         self.tab_control.pack(fill=BOTH, expand=True)
         
-        self.create_tab = ttk.Frame(self.tab_control)
-        self.tab_control.add(self.create_tab, text='Добавить письмо')
-        self.create_add_tab()
-        
         self.read_tab = ttk.Frame(self.tab_control)
         self.tab_control.add(self.read_tab, text='Найти письмо')
         self.create_read_tab()
         
-        self.update_tab = ttk.Frame(self.tab_control)
-        self.tab_control.add(self.update_tab, text='Изменить письмо')
-        self.create_update_tab()
-        
-        self.delete_tab = ttk.Frame(self.tab_control)
-        self.tab_control.add(self.delete_tab, text='Удалить письмо')
-        self.create_delete_tab()
+        if self.user_role == 6:
+            self.create_tab = ttk.Frame(self.tab_control)
+            self.tab_control.add(self.create_tab, text='Добавить письмо')
+            self.create_add_tab()
+            
+            self.update_tab = ttk.Frame(self.tab_control)
+            self.tab_control.add(self.update_tab, text='Изменить письмо')
+            self.create_update_tab()
+            
+            self.delete_tab = ttk.Frame(self.tab_control)
+            self.tab_control.add(self.delete_tab, text='Удалить письмо')
+            self.create_delete_tab()
         
     def logout(self):
         self.token = None
