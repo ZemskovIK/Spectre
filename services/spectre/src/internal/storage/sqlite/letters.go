@@ -19,7 +19,7 @@ func (s *sqliteDB) GetLetterByID(id int) (models.Letter, error) {
 	loc := GLOC_LTS + "GetLetterByID()"
 	s.log.Infof("%s: called for id=%d", loc, id)
 
-	query := `SELECT l.id, l.body, l.found_at, l.found_in,
+	query := `SELECT l.id, l.body, l.found_at, l.found_in, l.access_level,
 			  TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
               FROM letters l
               LEFT JOIN authors a ON l.author_id = a.id
@@ -32,6 +32,7 @@ func (s *sqliteDB) GetLetterByID(id int) (models.Letter, error) {
 		&letter.Body,
 		&letter.FoundAt,
 		&letter.FoundIn,
+		&letter.AccessLevel,
 		&letter.Author,
 	); err != nil {
 		if err == sql.ErrNoRows {
@@ -149,7 +150,7 @@ func (s *sqliteDB) GetAllLettersWithAccess(accessLevel int) ([]models.Letter, er
 	loc := GLOC_LTS + "GetAllLettersWithAccess()"
 	s.log.Infof("%s: called with accessLevel=%d", loc, accessLevel)
 
-	query := `SELECT l.id, l.body, l.found_at, l.found_in, 
+	query := `SELECT l.id, l.body, l.found_at, l.found_in, l.access_level,
 	          TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
               FROM letters l
               LEFT JOIN authors a ON l.author_id = a.id
@@ -170,6 +171,7 @@ func (s *sqliteDB) GetAllLettersWithAccess(accessLevel int) ([]models.Letter, er
 			&letter.Body,
 			&letter.FoundAt,
 			&letter.FoundIn,
+			&letter.AccessLevel,
 			&letter.Author,
 		)
 		if err != nil {
@@ -193,7 +195,7 @@ func (s *sqliteDB) GetAllLetters() ([]models.Letter, error) {
 	loc := GLOC_LTS + "GetAllLetters)"
 	s.log.Infof("%s: called", loc)
 
-	query := `SELECT l.id, l.body, l.found_at, l.found_in, 
+	query := `SELECT l.id, l.body, l.found_at, l.found_in, l.access_level,
 	          TRIM(a.fname || ' ' || a.mname || ' ' || a.lname) AS author
               FROM letters l
               LEFT JOIN authors a ON l.author_id = a.id`
@@ -213,6 +215,7 @@ func (s *sqliteDB) GetAllLetters() ([]models.Letter, error) {
 			&letter.Body,
 			&letter.FoundAt,
 			&letter.FoundIn,
+			&letter.AccessLevel,
 			&letter.Author,
 		)
 		if err != nil {
