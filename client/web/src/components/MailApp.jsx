@@ -28,7 +28,7 @@ export default function MailApp() {
   const [editingId, setEditingId] = useState(null);
   const [isError, setIsError] = useState("Писем нет");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(10);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -98,7 +98,7 @@ export default function MailApp() {
     const secretKey = "test_secret";
     const decoded = jwtDecode(token);
 
-    console.log(decoded.id);
+    console.log(decoded.role);
     console.log();
   };
 
@@ -167,7 +167,7 @@ export default function MailApp() {
           body: newEditingMessage,
           author: editingAuthor.trim(),
           found_at: transDataToDima(editingDataInt.trim()),
-          // found_in: editingFoundIn.trim(),
+          found_in: editingFoundIn.trim(),
         }
       );
       fetchMessages();
@@ -197,7 +197,7 @@ export default function MailApp() {
         body: newMessage,
         author: author.trim(),
         found_at: transDataToDima(dataInt.trim()),
-        // found_in: foundIn.trim(),
+        found_in: foundIn.trim(),
       });
       fetchMessages();
       setMessages([...messages, response.data]);
@@ -238,18 +238,21 @@ export default function MailApp() {
   }
 
   return (
-    <div className="min-h-screen m-5">
+    <div className="min-h-screen m-6">
       {/* Кнопка выхода */}
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end">
         <button
           onClick={handleLogout}
-          className="bg-red-500 text-white py-1 px-3 rounded-lg hover:bg-red-600 transition-colors"
+          className={`bg-red-500 mr-12 ${
+            isAdmin != 6 && "mt-6"
+          } text-white py-2 px-6 rounded-lg hover:bg-red-600 transition-colors absolute`}
         >
           Выйти
         </button>
       </div>
 
       <EmailList
+        isAdmin={isAdmin == 6 ? true : false}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         isError={isError}

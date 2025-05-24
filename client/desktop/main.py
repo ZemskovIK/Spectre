@@ -151,7 +151,7 @@ class MilitaryLettersApp:
         frame = ttk.Frame(self.read_tab)
         frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
         
-        ttk.Label(frame, text="ID письма или авторя:").grid(row=0, column=0, sticky=W, pady=5)
+        ttk.Label(frame, text="ID письма или автора:").grid(row=0, column=0, sticky=W, pady=5)
         self.read_query = ttk.Entry(frame, width=50)
         self.read_query.grid(row=0, column=1, pady=5, padx=5)
         
@@ -227,7 +227,7 @@ class MilitaryLettersApp:
         try:
             response = self.make_authenticated_request(
                 "POST", 
-                f"{self.api_url}/letters",
+                f"{self.api_url}/api/letters",
                 json=content
             )
             response_data = response.json()
@@ -240,40 +240,61 @@ class MilitaryLettersApp:
                 messagebox.showerror("Ошибка", f"Ошибка: {error_msg}")
         except requests.exceptions.RequestException as e:
             messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
-    
-    def search_letter(self):
-        query = self.read_query.get()
+            
+    def search_letter(self):  # GET /api/letters/{letter_id}
+        query = self.read_query.get().strip()
         if not query:
             messagebox.showerror("Ошибка", "Введите ID письма или автора")
             return
         
         try:
-            response = self.make_authenticated_request(
-                "GET", 
-                f"{self.api_url}/letters"
-            )
-            if response.status_code == 200:
-                all_letters = response.json().get("content", [])
-                
-                results = []
-                for letter in all_letters:
-                    if query.isdigit() and letter.get("id") == int(query):
-                        results = [letter]
-                        break
-                    elif str(letter.get("author", "")).lower() == query.lower():
-                        results.append(letter)
-                
-                self.display_results(results)
+            if query.isdigit():
+                self._search_by_letter_id(query)
             else:
-                self.display_results([])
+                self._search_by_author(query)
         except Exception as e:
-            messagebox.showerror("Ошибка", f"Ошибка: {str(e)}")
+            messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
+
+    def _search_by_letter_id(self, letter_id):
+        response = self.make_authenticated_request(
+            "GET", 
+            f"{self.api_url}/api/letters/{letter_id}"
+        )
+        response_data = response.json()
+        
+        if response.status_code == 200 and response_data.get("content"):
+            self.display_results([response_data["content"]])
+        else:
+            error_msg = response_data.get("error", "Письмо не найдено")
+            messagebox.showerror("Ошибка", error_msg)
+
+    def _search_by_author(self, author_name):
+        response = self.make_authenticated_request(
+            "GET", 
+            f"{self.api_url}/api/letters"
+        )
+        
+        if response.status_code != 200:
+            error_msg = response.json().get("error", "Не удалось получить список писем")
+            messagebox.showerror("Ошибка", error_msg)
+            return
+        
+        all_letters = response.json().get("content", [])
+        results = [
+            letter for letter in all_letters 
+            if str(letter.get("author", "")).lower() == author_name.lower()
+        ]
+        
+        if results:
+            self.display_results(results)
+        else:
+            messagebox.showinfo("Информация", "Письма данного автора не найдены")
 
     def get_all_letters(self): # GET /api/letters
         try:
             response = self.make_authenticated_request(
                 "GET", 
-                f"{self.api_url}/letters"
+                f"{self.api_url}/api/letters"
             )
             response_data = response.json()
             print(response_data)
@@ -313,7 +334,7 @@ class MilitaryLettersApp:
         try:
             response = self.make_authenticated_request(
                 "GET", 
-                f"{self.api_url}/letters"
+                f"{self.api_url}/api/letters"
             )
             
             if response.status_code == 200:
@@ -362,7 +383,7 @@ class MilitaryLettersApp:
         try:
             response = self.make_authenticated_request(
                 "PUT", 
-                f"{self.api_url}/letters/{letter_id}",
+                f"{self.api_url}/api/letters/{letter_id}",
                 json=content
             )
             response_data = response.json()
@@ -385,7 +406,7 @@ class MilitaryLettersApp:
         try:
             response = self.make_authenticated_request(
                 "DELETE", 
-                f"{self.api_url}/letters/{letter_id}"
+                f"{self.api_url}/api/letters/{letter_id}"
             )
             response_data = response.json()
             
