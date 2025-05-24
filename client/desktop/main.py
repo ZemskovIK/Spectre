@@ -1,5 +1,5 @@
 from  tkinter import *
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, PhotoImage
 import requests
 import jwt
 
@@ -14,7 +14,8 @@ class MilitaryLettersApp:
         x = (screen_width - window_width) // 2
         y = (screen_height - window_height) // 2
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        self.root.iconbitmap(default="./letters.ico")
+        self.img = PhotoImage(file='./letters.png')
+        self.root.iconphoto(True, self.img)
         
         self.style = ttk.Style()
         self.style.configure('TLabel', font=('Arial', 10))
