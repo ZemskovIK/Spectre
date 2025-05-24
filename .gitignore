@@ -4,5 +4,6 @@ server/
 services/spectre/db/spec.db
 linesc.py
 services/crypto/client.py
-services/crypto/server.py
+services/crypto/server_test.py
+services/crypto/Tasks.md
 services/crypto/__pycache__/
