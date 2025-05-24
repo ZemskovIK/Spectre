@@ -7,6 +7,7 @@ import (
 	"spectre/internal/srv/api/handlers"
 	"spectre/internal/srv/auth"
 	"spectre/internal/srv/methods"
+	"spectre/internal/srv/proxy"
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"
 )
@@ -23,10 +24,10 @@ type apiHandler interface {
 	GetAll(w http.ResponseWriter, r *http.Request)
 }
 
-func NewRouter(s st.Storage, log *logger.Logger) *Router {
+func NewRouter(s st.Storage, log *logger.Logger, cr *proxy.CryptoClient) *Router {
 	mux := http.NewServeMux()
 
-	lettersHL := handlers.NewLettersHandler(s, log)
+	lettersHL := handlers.NewLettersHandler(s, log, cr)
 	usersHL := handlers.NewUsersHandler(s, log)
 	authHL := auth.NewAuthHandler(s, log)
 

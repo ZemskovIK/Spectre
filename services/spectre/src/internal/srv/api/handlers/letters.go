@@ -8,6 +8,7 @@ import (
 	"spectre/internal/lib"
 	"spectre/internal/models"
 	"spectre/internal/srv/api"
+	"spectre/internal/srv/proxy"
 	"spectre/internal/srv/response"
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"
@@ -24,17 +25,19 @@ type lettersStore interface {
 }
 
 type lettersHandler struct {
-	st  lettersStore
-	log *logger.Logger
+	crypto *proxy.CryptoClient
+	st     lettersStore
+	log    *logger.Logger
 }
 
 // NewLettersHandler creates a new letters handler.
 func NewLettersHandler(
-	s lettersStore, log *logger.Logger,
+	s lettersStore, log *logger.Logger, cr *proxy.CryptoClient,
 ) *lettersHandler {
 	return &lettersHandler{
-		st:  s,
-		log: log,
+		st:     s,
+		log:    log,
+		crypto: cr,
 	}
 }
 
@@ -67,9 +70,20 @@ func (h *lettersHandler) GetAll(
 	}
 
 	h.log.Debugf("%s: found %d letters for access level %d", loc, len(letters), usrAccess)
-	// ! TODO : encrypt
 
-	response.Ok(w, letters)
+	// ! TODO : encrypt
+	b64, err := lib.ToBase64Slice(letters)
+	if err != nil {
+		response.ErrCannotGetB64Strings(w)
+		return
+	}
+	resp, err := h.crypto.Encrypt(b64)
+	if err != nil {
+		response.ErrCannotEncryptData(w)
+		return
+	}
+
+	response.OkWithResponse(w, resp)
 }
 
 // GetOne returns a single letter by id according to user's access level.
@@ -114,6 +128,9 @@ func (h *lettersHandler) GetOne(
 	}
 
 	h.log.Debugf("%s: successfully retrieved letter: %+v", loc, letter)
+
+	// ! TODO : encrypt
+
 	response.Ok(w, letter)
 }
 

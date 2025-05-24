@@ -40,6 +40,10 @@ func JWTOk(w http.ResponseWriter, token string) {
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
+func OkWithResponse(w http.ResponseWriter, r Response) {
+	json.NewEncoder(w).Encode(r)
+}
+
 // WriteError sends an error response with a given status and message.
 func WriteError(w http.ResponseWriter, status int, msg string) {
 	w.WriteHeader(status)
@@ -119,4 +123,12 @@ func ErrCannotRetrieveLetters(w http.ResponseWriter) {
 // ErrCannotRetrieveUsers sends a 500 error when users cannot be retrieved.
 func ErrCannotRetrieveUsers(w http.ResponseWriter) {
 	WriteError(w, http.StatusInternalServerError, "cannot retrieve users")
+}
+
+func ErrCannotGetB64Strings(w http.ResponseWriter) {
+	WriteError(w, http.StatusInternalServerError, "cannot convert data to base64")
+}
+
+func ErrCannotEncryptData(w http.ResponseWriter) {
+	WriteError(w, http.StatusBadGateway, "cannot encrypt data!")
 }

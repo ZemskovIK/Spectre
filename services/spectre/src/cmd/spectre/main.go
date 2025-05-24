@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	server "spectre/internal/srv"
+	"spectre/internal/srv/proxy"
 	"spectre/internal/storage/sqlite"
 	"spectre/pkg/logger"
 	"syscall"
@@ -30,8 +31,14 @@ func main() {
 	}
 	log.Info("init storage")
 
+	// init crypto client
+	crypto := proxy.NewCryptoClient(
+		"http://127.0.0.1:7654/encrypt",
+		"http://127.0.0.1:7654/decrypt",
+	)
+
 	// init router
-	r := server.NewRouter(st, log)
+	r := server.NewRouter(st, log, crypto)
 	r.Use(server.AuthMiddleware(log))
 	r.Use(server.CORSMiddleware)
 	r.Use(server.JSONRespMiddleware)
