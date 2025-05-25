@@ -2,6 +2,7 @@ from  tkinter import *
 from tkinter import ttk, messagebox, PhotoImage
 import requests
 import jwt
+import os
 
 class MilitaryLettersApp:
     def __init__(self, root):
@@ -14,7 +15,8 @@ class MilitaryLettersApp:
         x = (screen_width - window_width) // 2
         y = (screen_height - window_height) // 2
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        self.img = PhotoImage(file='./letters.png')
+        icon_path = os.path.join(os.path.dirname(__file__), "letters.png")
+        self.img = PhotoImage(file=icon_path)
         self.root.iconphoto(True, self.img)
         
         self.style = ttk.Style()
