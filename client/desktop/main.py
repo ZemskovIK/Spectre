@@ -459,6 +459,24 @@ class MilitaryLettersApp:
         self.update_found_at.delete(0, END)
         self.update_found_in.delete(0, END)
     
+def decrypt():
+    data = request.get_json()
+    print(f"\nserver.py | decrypt() data: {data}\n")
+
+    crypto_box = crypto.Aes256CbcHmac(server_aes_key, server_hmac_key)
+
+    decrypted_text = crypto_box.decrypt(data)
+
+    data_list = json.loads(decrypted_text.decode('utf-8'))
+    content_base64_list = [base64.b64encode(item.encode('utf-8')).decode('utf-8')
+        for item in data_list]
+    result = {
+        "content": content_base64_list
+    }
+
+    print(f"\nserver.py | decrypt() result: {result}\n")
+    return result
+
 
 if __name__ == "__main__":
     root = Tk()
