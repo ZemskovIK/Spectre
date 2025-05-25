@@ -9,8 +9,8 @@ var (
 	errLetterNotFound = func(id int) error {
 		return fmt.Errorf("letter with id %d not found", id)
 	}
-	errCannotGetLetter = func(id int, err error) error {
-		return fmt.Errorf("cannot get letter with id %d: %v", id, err)
+	errCannotGetWithID = func(id int, err error) error {
+		return fmt.Errorf("cannot get with id %d: %v", id, err)
 	}
 	errCannotDeleteLetter = func(id int, err error) error {
 		return fmt.Errorf("cannot delete letter with id %d: %w", id, err)
