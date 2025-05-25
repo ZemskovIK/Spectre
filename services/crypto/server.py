@@ -24,8 +24,9 @@ def encrypt():
 
     json_str = json.dumps(content)
     content = json_str.encode('utf-8')
-    print(json_str)
-    print(content)
+
+    print(f"\nserver.py | encrypt() json_str: {json_str}\n")
+    print(f"\nserver.py | encrypt() content: {content}\n")
 
     crypto_box = crypto.Aes256CbcHmac(server_aes_key, server_hmac_key)
     nonce = os.urandom(12)
@@ -46,7 +47,7 @@ def encrypt():
 def decrypt():
     data = request.get_json()
     # content = base64.b64decode(data['content'])
-    print(f"\nserver.py | data: {data}\n")
+    print(f"\nserver.py | decrypt() data: {data}\n")
     # print(content)
     # print(base64.b64decode(data["iv"]))
     # print("\n\n\n\n\n\n")
@@ -63,7 +64,7 @@ def decrypt():
     }
 
     # return jsonify(base64.b64encode(decrypted_text).decode())
-    print(result)
+    print(f"\nserver.py | decrypt() result: {result}\n")
     return result
 
 

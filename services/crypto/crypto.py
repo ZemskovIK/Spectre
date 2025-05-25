@@ -75,11 +75,12 @@ class Aes256CbcHmac:
 
     def decrypt(self, data: dict[str, str]) -> bytes:
         iv = base64.b64decode(data["iv"])
-        print(f"\ncrypto.py | data['content']: {data["content"]}\n")
         ciphertext = base64.b64decode(data["content"])
-        print("\n\n\nERROR\n\n\n")
+        # print("\n\n\nERROR\n\n\n")
         nonce = base64.b64decode(data["nonce"])
         tag = base64.b64decode(data["hmac"])
+
+        print(f"\ncrypto.py | decrypt() data: {data}\n")
 
         h = hmac.HMAC(self.hmac_key, hashes.SHA256())
         h.update(iv + ciphertext + nonce)
