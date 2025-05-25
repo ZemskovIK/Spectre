@@ -20,7 +20,7 @@ app = Flask(__name__)
 @app.route('/encrypt', methods=['POST'])
 def encrypt():
     data = request.get_json()
-    content = [str(base64.b64decode(i))[2:-1] for i in data['content']]
+    content = [base64.b64decode(i).decode("utf-8") for i in data['content']]
 
     json_str = json.dumps(content)
     content = json_str.encode('utf-8')
