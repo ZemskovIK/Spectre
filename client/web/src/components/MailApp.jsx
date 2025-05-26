@@ -351,7 +351,7 @@ export default function MailApp() {
     } catch (error) {
       console.error("Ошибка отправки:", error);
       if (error.response && error.response.status === 401) {
-        console.log("lol");
+        console.log("post ошибка отправки юзера");
       }
     } finally {
       setLoading(false);
@@ -411,11 +411,15 @@ export default function MailApp() {
           <div className="pl-6 pt-1 pb-2 border-b">
             {isAdmin == 6 ? (
               <>
-                <h2
-                  className="text-lg font-semibold"
-                  onClick={HandleChangeShowContent}
-                >
-                  Письма ({messages.length}) Пользователи ({users.length})
+                <h2 className="text-lg font-semibold">
+                  Письма ({messages.length}){" "}
+                  <span
+                    className="cursor-pointer hover:text-blue-500"
+                    onClick={HandleChangeShowContent}
+                  >
+                    <strong>&#8592;</strong>
+                  </span>{" "}
+                  Пользователи ({users.length})
                 </h2>
               </>
             ) : (
@@ -443,12 +447,20 @@ export default function MailApp() {
           }`}
         >
           <div className="pl-6 pt-1 pb-2 border-b">
-            <h2
-              className="text-lg font-semibold"
-              onClick={HandleChangeShowContent}
-            >
-              Пользователи ({users.length})
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold inline-block">
+                Письма ({messages.length})
+              </h2>
+              <span
+                className="cursor-pointer hover:text-blue-500 text-lg"
+                onClick={HandleChangeShowContent}
+              >
+                →
+              </span>
+              <h2 className="text-lg font-semibold inline-block">
+                Пользователи ({users.length})
+              </h2>
+            </div>
           </div>
           <UsersList
             isAdmin={isAdmin == 6 ? true : false}
