@@ -79,6 +79,7 @@ func (h *lettersHandler) GetAll(
 	}
 	resp, err := h.crypto.Encrypt(b64)
 	if err != nil {
+		h.log.Errorf("%s: cannot encrypt data: %v", loc, err)
 		response.ErrCannotEncryptData(w)
 		return
 	}
