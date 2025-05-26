@@ -11,3 +11,5 @@ venv/pyvenv.cfg
 venv/bin/python
 venv/bin/python3
 venv/bin/python3.12
+client/desktop/__pycache__/pyi_resource.cpython-312.pyc
+client/desktop/__pycache__/pyi_resource.cpython-313.pyc
