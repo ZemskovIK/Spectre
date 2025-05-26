@@ -1,7 +1,6 @@
 TODO.md
 .vscode/
 server/
-services/spectre/db/spec.db
 linesc.py
 services/crypto/client.py
 services/crypto/server_test.py
