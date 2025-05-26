@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ModalWindow from "./ModalWindow";
+import UsersModalWindow from "./UsersModalWindow";
 import EmailList from "./EmailList";
 import SendFormSection from "./SendFormSection";
 import EditFormSection from "./EditFormSection";
 import Auth from "./Auth";
 import { jwtDecode } from "jwt-decode";
+import UsersList from "./UsersList";
+import CreateUserForm from "./CreateUserForm";
+import EditUserForm from "./EditUserForm";
+import SwitchSection from "./SwitchSection";
 
 export default function MailApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -22,13 +27,39 @@ export default function MailApp() {
   const [editingDataInt, setEditingDataInt] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showUsersModal, setShowUsersModal] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [isError, setIsError] = useState("Писем нет");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAdmin, setIsAdmin] = useState(10);
+
+  const [users, setUsers] = useState([]);
+  const [showContent, setShowContent] = useState("1");
+
+  const [userLogin, setUserLogin] = useState("");
+  const [userId, setUserId] = useState("");
+  const [userPassword, setUserPassword] = useState("");
+  const [userAccessLevel, setUserAccessLevel] = useState("");
+
+  const [editingUserLogin, setEditingUserLogin] = useState("");
+  const [editingUserId, setEditingUserId] = useState();
+  const [editingUserPassword, setEditingUserPassword] = useState("");
+  const [editingUserAccessLevel, setEditingUserAccessLevel] = useState("");
+  const [isEditingUsers, setIsEditingUsers] = useState(false);
+
+  const { isLetter, setIsLetter } = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const decoded = jwtDecode(token);
+      setIsAdmin(decoded.role); // Обновляем роль при изменении токена
+    }
+  }, [isAuthenticated, isAdmin]); // Зависимость от isAuthenticated
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -53,7 +84,7 @@ export default function MailApp() {
     };
 
     checkAuth();
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     const requestInterceptor = axios.interceptors.request.use((config) => {
@@ -76,8 +107,38 @@ export default function MailApp() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsAuthenticated(false);
+    setShowContent("1");
+    setIsAdmin(null);
     setMessages([]);
+    setUsers([]);
+    setIsAdmin(null);
   };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/users");
+      if (response.data.error == null) {
+        setUsers(response.data.content);
+        console.log(response);
+      } else {
+        setIsError(response.data);
+      }
+    } catch (error) {
+      console.error("Ошибка загрузки писем:", error);
+      if (error.response && error.response.status === 401) {
+        handleLogout();
+      }
+    }
+  };
+
+  function HandleChangeShowContent() {
+    fetchUsers();
+    if (showContent == "1") {
+      setShowContent("2");
+    } else {
+      setShowContent("1");
+    }
+  }
 
   const fetchMessages = async () => {
     try {
@@ -108,6 +169,12 @@ export default function MailApp() {
       )
     : messages;
 
+  const filteredUsers = searchQuery.trim()
+    ? users.filter((user) =>
+        user?.login?.toLowerCase()?.includes(searchQuery.toLowerCase())
+      )
+    : users;
+
   function transDataToDima(data) {
     let newVal = `${data.slice(6, 10)}-${data.slice(3, 5)}-${data.slice(
       0,
@@ -120,6 +187,10 @@ export default function MailApp() {
     setIsEditing(!isEditing);
     setEditingDataInt("");
     setDataInt("");
+  }
+
+  function handleChangeUsersModes() {
+    setIsEditingUsers(false);
   }
 
   const handleChange = (e) => {
@@ -155,6 +226,22 @@ export default function MailApp() {
     }
   };
 
+  const deleteUser = async (id) => {
+    setDeletingId(id);
+    try {
+      await axios.delete(`http://localhost:5000/api/users/${id}`);
+      fetchUsers();
+    } catch (error) {
+      console.error("Ошибка удаления:", error);
+      if (error.response && error.response.status === 401) {
+        handleLogout();
+      }
+    } finally {
+      setUsers(users.filter((msg) => msg.id !== id));
+      setDeletingId(null);
+    }
+  };
+
   const editMessage = async (e) => {
     e.preventDefault();
     if (!newEditingMessage.trim() || !editingAuthor.trim()) return;
@@ -177,6 +264,36 @@ export default function MailApp() {
       setEditingDataInt("");
       setEditingFoundIn("");
       setEditingId("");
+    } catch (error) {
+      console.error("Ошибка редактирования:", error);
+      if (error.response && error.response.status === 401) {
+        handleLogout();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const editUser = async (e) => {
+    e.preventDefault();
+    if (!editingUserLogin.trim() || !editingUserPassword.trim()) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/users/${editingUserId}`,
+        {
+          login: editingUserLogin.trim(),
+          password: editingUserPassword.trim(),
+          access_level: editingUserAccessLevel.trim(),
+        }
+      );
+      fetchUsers();
+      setUsers([...users, response.data]);
+      setEditingUserAccessLevel("");
+      setEditingUserLogin("");
+      setEditingUserPassword("");
+      setEditingUserId("");
     } catch (error) {
       console.error("Ошибка редактирования:", error);
       if (error.response && error.response.status === 401) {
@@ -215,9 +332,40 @@ export default function MailApp() {
     }
   };
 
+  const createUser = async (e) => {
+    e.preventDefault();
+    if (!userLogin.trim() || !userPassword.trim()) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.post("http://localhost:5000/api/users", {
+        login: userLogin.trim(),
+        password: userPassword.trim(),
+        access_level: userAccessLevel.trim(),
+      });
+      fetchUsers();
+      setUsers([...users, response.data]);
+      setUserLogin("");
+      setUserPassword("");
+      setUserAccessLevel("");
+    } catch (error) {
+      console.error("Ошибка отправки:", error);
+      if (error.response && error.response.status === 401) {
+        handleLogout();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openMessage = (message) => {
     setSelectedMessage(message);
     setShowModal(true);
+  };
+
+  const openUsers = (user) => {
+    setSelectedUser(user);
+    setShowUsersModal(true);
   };
 
   if (loadingAuth) {
@@ -233,6 +381,8 @@ export default function MailApp() {
       <Auth
         setIsAuthenticated={setIsAuthenticated}
         fetchMessages={fetchMessages}
+        isAdmin={isAdmin}
+        setIsAdmin={setIsAdmin}
       />
     );
   }
@@ -251,109 +401,241 @@ export default function MailApp() {
         </button>
       </div>
 
-      <EmailList
-        isAdmin={isAdmin == 6 ? true : false}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        isError={isError}
-        messages={filteredMessages}
-        onEmailClick={openMessage}
-        onDeleteEmail={deleteMessage}
-        deletingId={deletingId}
-      ></EmailList>
+      {showContent == "1" ? (
+        <div
+          className={`lg:w-6xl 2xl:w-7xl mx-auto bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md overflow-hidden ${
+            !isAdmin &&
+            "absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+          }`}
+        >
+          <div className="pl-6 pt-1 pb-2 border-b">
+            {isAdmin == 6 ? (
+              <>
+                <h2
+                  className="text-lg font-semibold"
+                  onClick={HandleChangeShowContent}
+                >
+                  Письма ({messages.length}) Пользователи ({users.length})
+                </h2>
+              </>
+            ) : (
+              <h2 className="text-lg font-semibold">
+                Письма ({messages.length})
+              </h2>
+            )}
+          </div>
+          <EmailList
+            isAdmin={isAdmin == 6 ? true : false}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isError={isError}
+            messages={filteredMessages}
+            onEmailClick={openMessage}
+            onDeleteEmail={deleteMessage}
+            deletingId={deletingId}
+          ></EmailList>
+        </div>
+      ) : (
+        <div
+          className={`lg:w-6xl 2xl:w-7xl mx-auto bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md overflow-hidden ${
+            !isAdmin &&
+            "absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+          }`}
+        >
+          <div className="pl-6 pt-1 pb-2 border-b">
+            <h2
+              className="text-lg font-semibold"
+              onClick={HandleChangeShowContent}
+            >
+              Пользователи ({users.length}) Письма ({messages.length})
+            </h2>
+          </div>
+          <UsersList
+            isAdmin={isAdmin == 6 ? true : false}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isError={isError}
+            messages={filteredUsers}
+            onEmailClick={openUsers}
+            onDeleteEmail={deleteUser}
+            deletingId={deletingId}
+          ></UsersList>
+        </div>
+      )}
+      {showContent == "1" ? (
+        <>
+          {isAdmin == 6 ? (
+            <div className="lg:w-6xl 2xl:w-7xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
+              <button
+                onClick={handleChangeModes}
+                className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+                  isEditing
+                    ? "bg-gray-500 hover:bg-gray-700"
+                    : "bg-gray-600 hover:bg-gray-700"
+                }`}
+              >
+                Добавить новое письмо
+              </button>{" "}
+              <button
+                onClick={handleChangeModes}
+                className={`py-1 px-1 rounded-lg text-white font-medium text-2xl font-semibold mb-4 ${
+                  isEditing
+                    ? "bg-gray-600 hover:bg-gray-700"
+                    : "bg-gray-500 hover:bg-gray-700"
+                }`}
+              >
+                Редактировать письмо
+              </button>
+              {!isEditing ? (
+                <form
+                  onSubmit={sendMessage}
+                  className="space-y-2"
+                  autoComplete="off"
+                >
+                  <SendFormSection
+                    handleChange={handleChange}
+                    author={author}
+                    setAuthor={setAuthor}
+                    foundIn={foundIn}
+                    setFoundIn={setFoundIn}
+                    dataInt={dataInt}
+                    setDataInt={setDataInt}
+                    newMessage={newMessage}
+                    setNewMessage={setNewMessage}
+                  ></SendFormSection>
 
-      {isAdmin == 6 ? (
+                  <button
+                    type="submit"
+                    disabled={
+                      loading ||
+                      !newMessage.trim() ||
+                      !author.trim() ||
+                      dataInt.length < 10
+                    }
+                    className={`px-6 py-2 rounded-lg text-white font-medium ${
+                      loading ||
+                      !newMessage.trim() ||
+                      !author.trim() ||
+                      dataInt.length < 10
+                        ? "bg-gray-300 cursor-not-allowed"
+                        : "bg-gray-600 hover:bg-gray-700"
+                    }`}
+                  >
+                    {loading ? "Отправка..." : "Отправить"}
+                  </button>
+                </form>
+              ) : (
+                <form
+                  onSubmit={editMessage}
+                  className="space-y-2"
+                  autoComplete="off"
+                >
+                  <EditFormSection
+                    handleChange={handleChange}
+                    editingId={editingId}
+                    setEditingId={setEditingId}
+                    editingAuthor={editingAuthor}
+                    editingDataInt={editingDataInt}
+                    editingFoundIn={editingFoundIn}
+                    newEditingMessage={newEditingMessage}
+                    setEditingAuthor={setEditingAuthor}
+                    setEditingDataInt={setEditingDataInt}
+                    setEditingFoundIn={setEditingFoundIn}
+                    setEditingNewMessage={setEditingNewMessage}
+                  ></EditFormSection>
+
+                  <button
+                    type="submit"
+                    className={`px-6 py-2 rounded-lg text-white font-medium ${
+                      loading ||
+                      !newEditingMessage.trim() ||
+                      !editingAuthor.trim() ||
+                      editingDataInt.length < 10
+                        ? "bg-gray-300 cursor-not-allowed"
+                        : "bg-gray-600 hover:bg-gray-700"
+                    }`}
+                  >
+                    {loading ? "Отправка..." : "Сохранить"}
+                  </button>
+                </form>
+              )}
+            </div>
+          ) : (
+            ""
+          )}
+        </>
+      ) : (
         <div className="lg:w-6xl 2xl:w-7xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
           <button
-            onClick={handleChangeModes}
+            onClick={() => setIsEditingUsers(false)}
             className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
-              isEditing
+              isEditingUsers
                 ? "bg-gray-500 hover:bg-gray-700"
                 : "bg-gray-600 hover:bg-gray-700"
             }`}
           >
-            Добавить новое письмо
+            Добавить нового пользователя
           </button>{" "}
           <button
-            onClick={handleChangeModes}
+            onClick={() => setIsEditingUsers(true)}
             className={`py-1 px-1 rounded-lg text-white font-medium text-2xl font-semibold mb-4 ${
-              isEditing
+              isEditingUsers
                 ? "bg-gray-600 hover:bg-gray-700"
                 : "bg-gray-500 hover:bg-gray-700"
             }`}
           >
-            Редактировать письмо
+            Редактировать пользователя
           </button>
-          {!isEditing ? (
+          {!isEditingUsers ? (
             <form
-              onSubmit={sendMessage}
+              onSubmit={createUser}
               className="space-y-2"
               autoComplete="off"
             >
-              <SendFormSection
-                handleChange={handleChange}
-                author={author}
-                setAuthor={setAuthor}
-                foundIn={foundIn}
-                setFoundIn={setFoundIn}
-                dataInt={dataInt}
-                setDataInt={setDataInt}
-                newMessage={newMessage}
-                setNewMessage={setNewMessage}
-              ></SendFormSection>
+              <CreateUserForm
+                setUserId={setUserId}
+                userLogin={userLogin}
+                setUserLogin={setUserLogin}
+                userPassword={userPassword}
+                setUserPassword={setUserPassword}
+                userAccessLevel={userAccessLevel}
+                setUserAccessLevel={setUserAccessLevel}
+              ></CreateUserForm>
 
               <button
                 type="submit"
-                disabled={
-                  loading ||
-                  !newMessage.trim() ||
-                  !author.trim() ||
-                  dataInt.length < 10
-                }
                 className={`px-6 py-2 rounded-lg text-white font-medium ${
                   loading ||
-                  !newMessage.trim() ||
-                  !author.trim() ||
-                  dataInt.length < 10
+                  !userLogin.trim() ||
+                  !userPassword.trim() ||
+                  !userAccessLevel.trim()
                     ? "bg-gray-300 cursor-not-allowed"
                     : "bg-gray-600 hover:bg-gray-700"
                 }`}
               >
-                {loading ? "Отправка..." : "Отправить"}
+                {loading ? "Отправка..." : "Сохранить"}
               </button>
             </form>
           ) : (
-            <form
-              onSubmit={editMessage}
-              className="space-y-2"
-              autoComplete="off"
-            >
-              <EditFormSection
-                handleChange={handleChange}
-                editingId={editingId}
-                setEditingId={setEditingId}
-                editingAuthor={editingAuthor}
-                editingDataInt={editingDataInt}
-                editingFoundIn={editingFoundIn}
-                newEditingMessage={newEditingMessage}
-                setEditingAuthor={setEditingAuthor}
-                setEditingDataInt={setEditingDataInt}
-                setEditingFoundIn={setEditingFoundIn}
-                setEditingNewMessage={setEditingNewMessage}
-              ></EditFormSection>
+            <form onSubmit={editUser} className="space-y-2" autoComplete="off">
+              <EditUserForm
+                editingUserId={editingUserId}
+                setEditingUserId={setEditingUserId}
+                editingUserLogin={editingUserLogin}
+                setEditingUserLogin={setEditingUserLogin}
+                editingUserPassword={editingUserPassword}
+                setEditingUserPassword={setEditingUserPassword}
+                editingUserAccessLevel={editingUserAccessLevel}
+                setEditingUserAccessLevel={setEditingUserAccessLevel}
+              ></EditUserForm>
               <button
                 type="submit"
-                disabled={
-                  loading ||
-                  !newEditingMessage.trim() ||
-                  !editingAuthor.trim() ||
-                  editingDataInt.length < 10
-                }
                 className={`px-6 py-2 rounded-lg text-white font-medium ${
                   loading ||
-                  !newEditingMessage.trim() ||
-                  !editingAuthor.trim() ||
-                  editingDataInt.length < 10
+                  !editingUserPassword.trim() ||
+                  !editingUserLogin.trim() ||
+                  !editingUserAccessLevel.trim() ||
+                  !editingUserId.trim()
                     ? "bg-gray-300 cursor-not-allowed"
                     : "bg-gray-600 hover:bg-gray-700"
                 }`}
@@ -363,8 +645,6 @@ export default function MailApp() {
             </form>
           )}
         </div>
-      ) : (
-        ""
       )}
 
       {showModal && (
@@ -376,6 +656,18 @@ export default function MailApp() {
           text={selectedMessage.body}
           backgroundImage="https://static.vecteezy.com/system/resources/previews/032/048/239/non_2x/paper-vintage-background-recycle-brown-paper-crumpled-texture-ai-generated-free-photo.jpg"
         ></ModalWindow>
+      )}
+
+      {showUsersModal && (
+        <UsersModalWindow
+          onClose={() => setShowUsersModal(false)}
+          login={selectedUser.login}
+          password={selectedUser.password}
+          title={selectedUser.login}
+          access_level={selectedUser.access_level}
+          foundIn={selectedUser.access_level}
+          backgroundImage="https://i.pinimg.com/736x/e1/ec/7e/e1ec7eec65734e51e6d35111c97fe7b7.jpg"
+        ></UsersModalWindow>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import React from "react";
 import { useState } from "react";
-export default function EmailList({
+export default function UsersList({
   isAdmin,
   searchQuery,
   setSearchQuery,
@@ -23,7 +23,7 @@ export default function EmailList({
       <div className="pl-4 pr-8 pt-2">
         <input
           type="text"
-          placeholder="Поиск по автору..."
+          placeholder="Поиск по логину..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
@@ -62,12 +62,12 @@ export default function EmailList({
                     <div className="flex flex-col items-center">
                       {/* https://e7.pngegg.com/pngimages/178/760/png-clipart-paper-envelope-letter-mail-envelope-miscellaneous-material.png */}
                       <img
-                        src="https://osminog.biz/upload/CAllcorp2/ak3.png"
+                        src="https://cdn2.iconfinder.com/data/icons/users-22/64/_User_Man_Circle-1024.png"
                         className="z-0 group-hover:z-[-1] group-hover:-rotate-30 transition-transform duration-350"
                         style={{ height: "150px" }}
                       ></img>
                       <span className="font-medium text-sm text-center truncate w-full">
-                        {message.author}
+                        {message.login}
                       </span>
                       <span className="text-xs text-gray-500 mt-1">
                         номер: {message.id}
