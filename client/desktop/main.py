@@ -1,7 +1,8 @@
 from  tkinter import *
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, PhotoImage
 import requests
 import jwt
+import os
 import json
 import base64
 import crypto
@@ -16,8 +17,10 @@ class MilitaryLettersApp:
         screen_height = self.root.winfo_screenheight()
         x = (screen_width - window_width) // 2
         y = (screen_height - window_height) // 2
-        # self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        # self.root.iconbitmap(default="./letters.ico")
+        self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        icon_path = os.path.join(os.path.dirname(__file__), "letters.png")
+        self.img = PhotoImage(file=icon_path)
+        self.root.iconphoto(True, self.img)
         
         self.style = ttk.Style()
         self.style.configure('TLabel', font=('Arial', 10))
@@ -92,7 +95,13 @@ class MilitaryLettersApp:
         
         ttk.Label(self.header_frame, text="Архив", style='Header.TLabel').pack(side=LEFT)
         
-        logout_btn = ttk.Button(self.header_frame, text="Выйти", command=self.logout)
+        user_frame = ttk.Frame(self.header_frame)
+        user_frame.pack(side=RIGHT)
+        
+        if self.current_user:
+            ttk.Label(user_frame, text=self.current_user).pack(side=LEFT, padx=5)
+        
+        logout_btn = ttk.Button(user_frame, text="Выйти", command=self.logout)
         logout_btn.pack(side=RIGHT)
         
         self.tab_control = ttk.Notebook(self.main_frame)
