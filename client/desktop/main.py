@@ -343,9 +343,9 @@ class MilitaryLettersApp:
                         self.results_body.insert(END, formatted_letter)
                 else:
                     self.results_body.insert(END, "В базе нет писем")
-            else:
-                error_msg = letters.get("error", "Неизвестная ошибка")
-                self.results_body.insert(END, f"Ошибка: {error_msg}")
+            # else:
+            #     error_msg = letters.get("error", "Неизвестная ошибка")
+            #     self.results_body.insert(END, f"Ошибка: {error_msg}")
                 
             self.results_body.config(state=DISABLED)
         except requests.exceptions.RequestException as e:
