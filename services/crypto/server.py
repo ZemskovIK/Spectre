@@ -85,8 +85,8 @@ def ecdh():
     server.compute_shared_secret(client_pub) # 7,9
 
     # Ключи снизу используем для шифрования и проверки целостности
-    server_aes_key = server.aes_key
-    server_hmac_key = server.hmac_key
+    aes_key = server.aes_key
+    hmac_key = server.hmac_key
 
     result = {
         "content": server_pub

@@ -30,9 +30,12 @@ class MilitaryLettersApp:
         self.api_url = "http://localhost:5000"
         self.token = None
         self.current_user = None
-        self.aes_key = b'\xb9M\x0b8\x00\x10\x90\x16\xc7\xed\x93\x08\xc1\x00J\xf2\x08\xb0\x01~\xb5_G\x805\xac\x95\xa2t`1\xde'
-        self.hmac_key = b'Dp\xc2\xc6B\x16\xb8\\\xaf_z5\x8dC\x1f3\x19\n\xe1u8\xe1Q:\xd1}\xb2\xa0\xf8$\xa6\x0e'
-        
+        # self.aes_key = b'\xb9M\x0b8\x00\x10\x90\x16\xc7\xed\x93\x08\xc1\x00J\xf2\x08\xb0\x01~\xb5_G\x805\xac\x95\xa2t`1\xde'
+        # self.hmac_key = b'Dp\xc2\xc6B\x16\xb8\\\xaf_z5\x8dC\x1f3\x19\n\xe1u8\xe1Q:\xd1}\xb2\xa0\xf8$\xa6\x0e'
+        self.aes_key = None
+        self.hmac_key = None
+        self.client = None
+
         self.show_login_form()    
         
     def show_login_form(self):
@@ -512,7 +515,7 @@ class MilitaryLettersApp:
         self.update_found_in.delete(0, END)
     
 def decrypt(data, aes_key, hmac_key):
-    print(f"\nserver.py | decrypt() data: {data}\n")
+    print(f"\nmain.py | decrypt() data: {data}\n")
 
     crypto_box = crypto.Aes256CbcHmac(aes_key, hmac_key)
 
@@ -525,8 +528,38 @@ def decrypt(data, aes_key, hmac_key):
         "content": content_base64_list
     }
 
-    print(f"\nserver.py | decrypt() result: {result}\n")
+    print(f"\nmain.py | decrypt() result: {result}\n")
     return result
+
+def ecdh_post(client):
+    # Создаем ключи для обмена Диффи-Хеллмана и отправляем публичный ключ серверу
+    client = crypto.ECDHKeyExchange() # 4
+    client_pub = client.get_public_key_base64() # 5
+    print(f"\nmain.py | ecdh_post() client_pub: {client_pub}\n")
+
+    result = {
+        "content": client_pub
+    }
+
+    return result
+
+def ecdh_get(client):
+    # {
+    #     content: ["base64string_server_public_key"]
+    # }
+    data = request.get_json()
+    print(f"\nmain.py | ecdh_get() data: {data}\n")
+
+    server_pub = json.dumps(data["content"])
+    print(f"\nmain.py | ecdh_get() server_pub: {server_pub}\n")
+
+
+    client.compute_shared_secret(server_pub) # 7,9
+
+    # Ключи снизу используем для шифрования и проверки целостности
+    aes_key = client.aes_key
+    hmac_key = client.hmac_key
+
 
 if __name__ == "__main__":
     root = Tk()
