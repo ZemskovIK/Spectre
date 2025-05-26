@@ -307,7 +307,9 @@ class MilitaryLettersApp:
         try:
             if query.isdigit():
                 self._search_by_letter_id(query)
+                print(f"[DEBU] Author")
             else:
+                print(f"[DEBU] Author")
                 self._search_by_author(query)
         except Exception as e:
             messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
@@ -330,13 +332,19 @@ class MilitaryLettersApp:
             "GET", 
             f"{self.api_url}/api/letters"
         )
+        response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
         
         if response.status_code != 200:
             error_msg = response.json().get("error", "Не удалось получить список писем")
             messagebox.showerror("Ошибка", error_msg)
             return
         
-        all_letters = response.json().get("content", [])
+        all_letters = []
+        for item in response_data.get("content"):
+                bytes_data = base64.b64decode(item)
+                json_data = json.loads(bytes_data.decode('utf-8'))
+                all_letters.append(json_data)
+                
         results = [
             letter for letter in all_letters 
             if str(letter.get("author", "")).lower() == author_name.lower()
