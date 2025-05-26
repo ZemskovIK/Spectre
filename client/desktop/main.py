@@ -16,8 +16,8 @@ class MilitaryLettersApp:
         screen_height = self.root.winfo_screenheight()
         x = (screen_width - window_width) // 2
         y = (screen_height - window_height) // 2
-        self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        self.root.iconbitmap(default="./letters.ico")
+        # self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        # self.root.iconbitmap(default="./letters.ico")
         
         self.style = ttk.Style()
         self.style.configure('TLabel', font=('Arial', 10))
@@ -126,8 +126,6 @@ class MilitaryLettersApp:
         
         try:
             response = requests.request(method, url, **kwargs)
-            print(f"[INFO] {response}")
-            print(f"[INFO] {response.json()}")
             
             if response.status_code == 401:
                 messagebox.showerror("Ошибка", "Сессия истекла. Пожалуйста, войдите снова.")
@@ -311,16 +309,20 @@ class MilitaryLettersApp:
                 "GET", 
                 f"{self.api_url}/api/letters"
             )
-            print(f"[INFO] {response.json()}")
             response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
+            
+            result = []
+            for item in response_data.get("content"):
+                bytes_data = base64.b64decode(item)
+                json_data = json.loads(bytes_data.decode('utf-8'))
+                result.append(json_data)
             
             self.results_body.config(state=NORMAL)
             self.results_body.delete("1.0", END)
             
             if response.status_code == 200 and response_data.get("content"):                
-                letters = response_data["content"]
-                if letters:
-                    for letter in letters:
+                if result:
+                    for letter in result:
                         formatted_letter = (
                             f"ID: {letter.get('id', 'N/A')}\n"
                             f"Автор: {letter.get('author', 'N/A')}\n"
@@ -468,7 +470,6 @@ class MilitaryLettersApp:
         self.update_found_in.delete(0, END)
     
 def decrypt(data, aes_key, hmac_key):
-    # data = request.get_json()
     print(f"\nserver.py | decrypt() data: {data}\n")
 
     crypto_box = crypto.Aes256CbcHmac(aes_key, hmac_key)
