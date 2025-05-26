@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-export default function Auth({ setIsAuthenticated, fetchMessages }) {
+export default function Auth({
+  setIsAuthenticated,
+  fetchMessages,
+  isAdmin,
+  setIsAdmin,
+}) {
   const [login, setlogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
