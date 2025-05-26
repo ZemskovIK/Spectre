@@ -3,7 +3,6 @@ package handlers
 // ! TODO : think about copy-paste
 
 import (
-	"encoding/json"
 	"net/http"
 	"spectre/internal/models"
 	"spectre/internal/srv/api"
@@ -253,65 +252,78 @@ func (h *lettersHandler) Add(
 func (h *lettersHandler) Update(
 	w http.ResponseWriter, r *http.Request,
 ) {
-	log := GLOC_LTS + "Update()"
-	h.log.Infof("%s: handler called", log)
-	h.log.Debugf("%s: request: %+v", log, r)
+	loc := GLOC_LTS + "Update()"
+	h.log.Infof("%s: handler called", loc)
+	h.log.Debugf("%s: request: %+v", loc, r)
 
 	usrAccessLevel, ok := lib.FetchAccessLevelFromCtx(r.Context())
 	if !ok {
-		h.log.Errorf("%s: failed to fetch access level from context", log)
+		h.log.Errorf("%s: failed to fetch access level from context", loc)
 		response.ErrCannotUpdate(w)
 		return
 	}
 	if usrAccessLevel < lib.ADMIN_ALEVEL {
-		h.log.Warnf("%s: user access level %d is not admin", log, usrAccessLevel)
+		h.log.Warnf("%s: user access level %d is not admin", loc, usrAccessLevel)
 		response.ErrYouArntAdmin(w)
 		return
 	}
 
 	sid, id, err := lib.GetID(api.LETTER_POINT, r.RequestURI)
 	if err != nil {
-		h.log.Errorf("%s: invalid id '%s' in URI '%s': %v", log, sid, r.RequestURI, err)
+		h.log.Errorf("%s: invalid id '%s' in URI '%s': %v", loc, sid, r.RequestURI, err)
 		response.ErrInvalidID(w, sid)
 		return
 	}
 
-	var letter models.Letter
-	if err := json.NewDecoder(r.Body).Decode(&letter); err != nil {
-		h.log.Errorf("%s: failed to decode JSON body: %v", log, err)
-		response.ErrInvalidRequest(w, "invalid JSON")
+	// ! TODO : decrypt
+	resp, err := h.crypto.Decrypt(r)
+	if err != nil {
+		h.log.Errorf("%s: error cannot decrypt data: %v", loc, err)
+		response.ErrCannotDecryptData(w)
 		return
 	}
+	var letter models.Letter
+	if err := lib.FetchLetterFromB64(&letter, resp.Content); err != nil {
+		h.log.Errorf("%s: error cannot fetch letter from b64: %v", loc, err)
+		// TODO response
+		return
+	}
+
+	// if err := json.NewDecoder(r.Body).Decode(&letter); err != nil {
+	// 	h.log.Errorf("%s: failed to decode JSON body: %v", loc, err)
+	// 	response.ErrInvalidRequest(w, "invalid JSON")
+	// 	return
+	// }
 	letter.ID = id
-	h.log.Debugf("%s: decoded letter for update: %+v", log, letter)
+	h.log.Debugf("%s: decoded letter for update: %+v", loc, letter)
 
 	// ! TODO validation func
 	if letter.Body == "" {
-		h.log.Warnf("%s: body cannot be empty", log)
+		h.log.Warnf("%s: body cannot be empty", loc)
 		response.ErrInvalidRequest(w, "body cannot be empty")
 		return
 	}
 	if letter.Author == "" {
-		h.log.Infof("%s: author is empty, setting to 'unknown'", log)
+		h.log.Infof("%s: author is empty, setting to 'unknown'", loc)
 		letter.Author = "unknown"
 	}
 	if letter.FoundIn == "" {
-		h.log.Infof("%s: foundIn is empty, setting to 'unknown'", log)
+		h.log.Infof("%s: foundIn is empty, setting to 'unknown'", loc)
 		letter.FoundIn = "unknown"
 	}
 
-	h.log.Debugf("%s: updating letter with id: %d", log, id)
+	h.log.Debugf("%s: updating letter with id: %d", loc, id)
 	if err := h.st.UpdateLetter(letter); err != nil {
 		if err.Error() == st.ErrLetterNotFound(id).Error() {
-			h.log.Warnf("%s: letter not found with id: %d", log, id)
+			h.log.Warnf("%s: letter not found with id: %d", loc, id)
 			response.ErrNotFound(w, sid)
 		} else {
-			h.log.Errorf("%s: failed to update letter with id: %d, error: %v", log, id, err)
+			h.log.Errorf("%s: failed to update letter with id: %d, error: %v", loc, id, err)
 			response.ErrCannotUpdate(w)
 		}
 		return
 	}
 
-	h.log.Debugf("%s: letter with id %d updated successfully", log, id)
+	h.log.Debugf("%s: letter with id %d updated successfully", loc, id)
 	response.Ok(w, nil)
 }
