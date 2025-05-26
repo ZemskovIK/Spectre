@@ -67,7 +67,28 @@ def decrypt():
     print(f"\nserver.py | decrypt() result: {result}\n")
     return result
 
+@app.route('/ecdh', methods=['POST'])
+def ecdh():
+    # {
+    #     content: ["base64string_client_public_key"]
+    # }
+    data = request.get_json()
+    print(f"\nserver.py | ecdh() data: {data}\n")
+    # json_str = json.dumps(data["content"])
+    # print(f"\nserver.py | ecdh() json_str: {json_str}\n")
+    client_pub = json.dumps(data["content"])
+    print(f"\nserver.py | ecdh() client_pub: {client_pub}\n")
 
+    server = crypto.ECDHKeyExchange() # 4
+    server_pub = server.get_public_key_base64() # 5
+
+    server.compute_shared_secret(client_pub) # 7,9
+
+    result = {
+        "content": server_pub
+    }
+
+    return result
 
 if __name__ == '__main__':
     app.run(host=HOST, port=PORT, debug=True)

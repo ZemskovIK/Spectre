@@ -100,6 +100,8 @@ class Aes256CbcHmac:
         return plaintext
 
 def main():
+
+    # 4 5 3 1 3 7 8 9
     # Воображаемая архитектура клиент-сервер
     client = ECDHKeyExchange() # 1 
     client_pub = client.get_public_key_base64() # 2
@@ -107,6 +109,7 @@ def main():
     server = ECDHKeyExchange() # 4
     server_pub = server.get_public_key_base64() # 5
 
+    print(f"\ncrypto.py | main() client public key: {client_pub}\n")
 
     # Воображаемый обмен ключами # 3
 
