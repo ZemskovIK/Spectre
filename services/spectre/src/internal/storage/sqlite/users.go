@@ -158,3 +158,28 @@ func (s *sqliteDB) GetAllUsers() ([]models.User, error) {
 	s.log.Infof("%s: retrieved %d users", loc, len(users))
 	return users, nil
 }
+
+func (s *sqliteDB) GetUserByID(id int) (models.User, error) {
+	loc := GLOC_USR + "GetUserByID()"
+
+	query := `SELECT u.id, u.login, u.phash, u.access_level
+			  FROM users u
+			  WHERE u.id = ?`
+
+	var usr models.User
+	if err := s.db.QueryRow(query, id).Scan(
+		&usr.ID,
+		&usr.Login,
+		&usr.PHash,
+		&usr.AccessLevel,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			s.log.Warnf("%s: letter not found with id %d", loc, id)
+			return models.User{}, errLetterNotFound(id)
+		}
+		s.log.Errorf("%s: error retrieving letter with id %d: %v", loc, id, err)
+		return models.User{}, errCannotGetWithID(id, err)
+	}
+
+	return usr, nil
+}

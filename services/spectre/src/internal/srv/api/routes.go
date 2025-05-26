@@ -5,4 +5,5 @@ const (
 	LETTER_POINT  = "/api/letters/"
 
 	USERS_POINT = "/api/users"
+	USER_POINT  = "/api/users/"
 )

@@ -17,4 +17,5 @@ type Storage interface {
 	DeleteUser(id int) error
 	UpdateUser(usr models.User) error
 	GetAllUsers() ([]models.User, error)
+	GetUserByID(id int) (models.User, error)
 }

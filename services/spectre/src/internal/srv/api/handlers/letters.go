@@ -72,18 +72,18 @@ func (h *lettersHandler) GetAll(
 	h.log.Debugf("%s: found %d letters for access level %d", loc, len(letters), usrAccess)
 
 	// ! TODO : encrypt
-	b64, err := lib.ToBase64Slice(letters)
-	if err != nil {
-		response.ErrCannotGetB64Strings(w)
-		return
-	}
-	resp, err := h.crypto.Encrypt(b64)
-	if err != nil {
-		response.ErrCannotEncryptData(w)
-		return
-	}
+	// b64, err := lib.ToBase64Slice(letters)
+	// if err != nil {
+	// 	response.ErrCannotGetB64Strings(w)
+	// 	return
+	// }
+	// resp, err := h.crypto.Encrypt(b64)
+	// if err != nil {
+	// 	response.ErrCannotEncryptData(w)
+	// 	return
+	// }
 
-	response.OkWithResponse(w, resp)
+	response.Ok(w, letters)
 }
 
 // GetOne returns a single letter by id according to user's access level.

@@ -75,7 +75,9 @@
 
 ---
 
-## API эндпоинты
+## API эндпоинты (в работе)
+
+## Письма
 
 ### Получить все письма
 
@@ -241,6 +243,132 @@
 ```
 
 **Ошибка (500 | 400 | 404):**
+```json
+{
+  "content": null,
+  "error": "error!",
+  "iv": "",
+  "hmac": "",
+  "nonce": ""
+}
+```
+
+---
+
+## Пользователи (админ права)
+
+### Получить пользователя по ID
+
+`GET /api/users/{user_id}`
+
+**Успех (200 OK):**
+```json
+{
+    "content": {
+        "id": 1,
+        "login": "kek",
+        "pass_hash": "YXNk",
+        "access_level": 3
+    },
+    "error": null,
+    "iv": "",
+    "hmac": "",
+    "nonce": ""
+}
+```
+
+**Ошибка (500 Internal Server Error):**
+```json
+{
+  "content": null,
+  "error": "error!",
+  "iv": "",
+  "hmac": "",
+  "nonce": ""
+}
+```
+
+---
+
+### Удалить пользователя по ID
+
+`DELETE /api/users/{user_id}`
+
+**Успех (200 OK):**
+```json
+{
+  "content": null,
+  "error": null,
+  "iv": "",
+  "hmac": "",
+  "nonce": ""
+}
+```
+
+**Ошибка (500 Internal Server Error):**
+```json
+{
+  "content": null,
+  "error": "error!",
+  "iv": "",
+  "hmac": "",
+  "nonce": ""
+}
+```
+
+---
+
+### Создать нового пользователя
+
+`POST /api/users`
+
+**Тело запроса (application/json):**
+```json
+{
+    "login":"asd1",
+    "password":"asd1_pass",
+    "access_level":2
+}
+```
+
+**Успех (200 OK):**
+```json
+{
+  "content": null,
+  "error": null,
+  "iv": "",
+  "hmac": "",
+  "nonce": ""
+}
+```
+
+**Ошибка (422 | 400):**
+```json
+{
+  "content": null,
+  "error": "error!",
+  "iv": "",
+  "hmac": "",
+  "nonce": ""
+}
+```
+
+---
+
+`DELETE /api/users/{user_id}`
+
+**Успех (200 OK):**
+```json
+{
+  "content": null,
+  "error": null,
+  "iv": "",
+  "hmac": "",
+  "nonce": ""
+}
+```
+
+**Ошибка (500 Internal Server Error):**
 ```json
 {
   "content": null,

@@ -7,13 +7,31 @@ services:
     env_file:
       - .env
     ports:
-      - "${SERVER_PORT}:${SERVER_PORT}"
-    command: sh -c "gunicorn --bind 0.0.0.0:${SERVER_PORT} server:app --workers 3"
+      - "${CRYPTO_PORT}:${CRYPTO_PORT}"
+    command: sh -c "gunicorn --bind 0.0.0.0:${CRYPTO_PORT} server:app --workers 3"
     restart: always
     networks:
       custom_network:
         ipv4_address: 10.12.0.11
-    
+  
+  spectre:
+    container_name: SpectreBase
+    build:
+      context: ./spectre
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "${SPECTRE_PORT}:${SPECTRE_PORT}"
+    command: >
+      sh -c "touch /spectre/db/spec.db && cd /spectre/bin && /spectre/bin/migrator -action up && /spectre/bin/spectre"
+    depends_on:
+      - crypto
+    restart: always
+    networks:
+      custom_network:
+        ipv4_address: 10.12.0.12
+
 networks:
   custom_network:
     driver: bridge

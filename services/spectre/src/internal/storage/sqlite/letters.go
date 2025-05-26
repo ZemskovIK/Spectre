@@ -40,7 +40,7 @@ func (s *sqliteDB) GetLetterByID(id int) (models.Letter, error) {
 			return models.Letter{}, errLetterNotFound(id)
 		}
 		s.log.Errorf("%s: error retrieving letter with id %d: %v", loc, id, err)
-		return models.Letter{}, errCannotGetLetter(id, err)
+		return models.Letter{}, errCannotGetWithID(id, err)
 	}
 
 	s.log.Infof("%s: letter retrieved id=%d", loc, id)

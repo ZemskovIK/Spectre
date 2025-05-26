@@ -19,16 +19,7 @@ export default function EmailList({
   const messageRows = chunkArray(messages, 4);
 
   return (
-    <div
-      className={`lg:w-6xl 2xl:w-7xl mx-auto bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md overflow-hidden ${
-        !isAdmin &&
-        "absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-      }`}
-    >
-      <div className="pl-6 pt-1 pb-2 border-b">
-        <h2 className="text-lg font-semibold">Письма ({messages.length})</h2>
-      </div>
-
+    <>
       <div className="pl-4 pr-8 pt-2">
         <input
           type="text"
@@ -103,6 +94,6 @@ export default function EmailList({
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
