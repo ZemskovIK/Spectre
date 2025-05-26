@@ -2,6 +2,9 @@ from  tkinter import *
 from tkinter import ttk, messagebox
 import requests
 import jwt
+import json
+import base64
+import crypto
 
 class MilitaryLettersApp:
     def __init__(self, root):
@@ -23,6 +26,8 @@ class MilitaryLettersApp:
         
         self.api_url = "http://localhost:5000"
         self.token = None
+        self.aes_key = b'\xb9M\x0b8\x00\x10\x90\x16\xc7\xed\x93\x08\xc1\x00J\xf2\x08\xb0\x01~\xb5_G\x805\xac\x95\xa2t`1\xde'
+        self.hmac_key = b'Dp\xc2\xc6B\x16\xb8\\\xaf_z5\x8dC\x1f3\x19\n\xe1u8\xe1Q:\xd1}\xb2\xa0\xf8$\xa6\x0e'
         
         self.show_login_form()    
         
@@ -121,6 +126,8 @@ class MilitaryLettersApp:
         
         try:
             response = requests.request(method, url, **kwargs)
+            print(f"[INFO] {response}")
+            print(f"[INFO] {response.json()}")
             
             if response.status_code == 401:
                 messagebox.showerror("Ошибка", "Сессия истекла. Пожалуйста, войдите снова.")
@@ -304,7 +311,8 @@ class MilitaryLettersApp:
                 "GET", 
                 f"{self.api_url}/api/letters"
             )
-            response_data = response.json()
+            print(f"[INFO] {response.json()}")
+            response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
             
             self.results_body.config(state=NORMAL)
             self.results_body.delete("1.0", END)
@@ -459,11 +467,11 @@ class MilitaryLettersApp:
         self.update_found_at.delete(0, END)
         self.update_found_in.delete(0, END)
     
-def decrypt():
-    data = request.get_json()
+def decrypt(data, aes_key, hmac_key):
+    # data = request.get_json()
     print(f"\nserver.py | decrypt() data: {data}\n")
 
-    crypto_box = crypto.Aes256CbcHmac(server_aes_key, server_hmac_key)
+    crypto_box = crypto.Aes256CbcHmac(aes_key, hmac_key)
 
     decrypted_text = crypto_box.decrypt(data)
 
@@ -476,7 +484,6 @@ def decrypt():
 
     print(f"\nserver.py | decrypt() result: {result}\n")
     return result
-
 
 if __name__ == "__main__":
     root = Tk()
