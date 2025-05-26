@@ -112,7 +112,10 @@ class MilitaryLettersApp:
         for widget in self.root.winfo_children():
             widget.destroy()
         
-        self.create_widgets()        
+        self.create_widgets()
+        
+        if self.user_role == 6:
+            self.tab_control.select(self.users_tab)    
 
     def create_widgets(self):
         self.main_frame = ttk.Frame(self.root)
@@ -151,6 +154,10 @@ class MilitaryLettersApp:
             self.delete_tab = ttk.Frame(self.tab_control)
             self.tab_control.add(self.delete_tab, text='Удалить письмо')
             self.create_delete_tab()
+            
+            self.users_tab = ttk.Frame(self.tab_control)
+            self.tab_control.add(self.users_tab, text='Управление пользователями')
+            self.create_users_tab()
         
     def logout(self):
         self.token = None
@@ -500,7 +507,83 @@ class MilitaryLettersApp:
         self.update_body.delete("1.0", END)
         self.update_found_at.delete(0, END)
         self.update_found_in.delete(0, END)
+        
+    def get_user_by_id(self, user_id):
+        response = self.make_authenticated_request(
+            "GET", 
+            f"{self.api_url}/api/users/{user_id}"
+        )
+        return response.json() if response else None
+
+    def delete_user(self, user_id):
+        response = self.make_authenticated_request(
+            "DELETE", 
+            f"{self.api_url}/api/users/{user_id}"
+        )
+        return response.json() if response else None
     
+    def create_users_tab(self):
+        frame = ttk.Frame(self.users_tab)
+        frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+        
+        ttk.Label(frame, text="ID пользователя:").grid(row=0, column=0, sticky=W, pady=5)
+        self.user_id_entry = ttk.Entry(frame, width=30)
+        self.user_id_entry.grid(row=0, column=1, pady=5, padx=5)
+        
+        search_btn = ttk.Button(frame, text="Найти", command=self.search_user)
+        search_btn.grid(row=0, column=2, padx=5)
+        
+        ttk.Label(frame, text="Информация о пользователе:").grid(row=1, column=0, sticky=W, pady=5)
+        
+        self.user_info_text = Text(frame, width=70, height=10, state=DISABLED)
+        self.user_info_text.grid(row=2, column=0, columnspan=3, pady=5)
+        
+        delete_btn = ttk.Button(frame, text="Удалить пользователя", command=self.delete_user_action)
+        delete_btn.grid(row=3, column=1, pady=10, sticky=E)
+        
+    def search_user(self):
+        user_id = self.user_id_entry.get()
+        if not user_id:
+            messagebox.showerror("Ошибка", "Введите ID пользователя")
+            return
+        
+        try:
+            user_data = self.get_user_by_id(user_id)
+            if user_data and user_data.get("content"):
+                user = user_data["content"]
+                self.user_info_text.config(state=NORMAL)
+                self.user_info_text.delete("1.0", END)
+                self.user_info_text.insert(END, 
+                    f"ID: {user.get('id', 'N/A')}\n"
+                    f"Логин: {user.get('login', 'N/A')}\n"
+                    f"Уровень доступа: {user.get('access_level', 'N/A')}\n"
+                )
+                self.user_info_text.config(state=DISABLED)
+            else:
+                error_msg = user_data.get("error", "Пользователь не найден")
+                messagebox.showerror("Ошибка", error_msg)
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
+    
+    def delete_user_action(self):
+        user_id = self.user_id_entry.get()
+        if not user_id:
+            messagebox.showerror("Ошибка", "Введите ID пользователя")
+            return
+        
+        if messagebox.askyesno("Подтверждение", "Вы уверены, что хотите удалить этого пользователя?"):
+            try:
+                result = self.delete_user(user_id)
+                if result and result.get("error") is None:
+                    messagebox.showinfo("Успех", "Пользователь успешно удален")
+                    self.user_info_text.config(state=NORMAL)
+                    self.user_info_text.delete("1.0", END)
+                    self.user_info_text.config(state=DISABLED)
+                else:
+                    error_msg = result.get("error", "Неизвестная ошибка") if result else "Ошибка соединения"
+                    messagebox.showerror("Ошибка", error_msg)
+            except Exception as e:
+                messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
 
 if __name__ == "__main__":
     root = Tk()
