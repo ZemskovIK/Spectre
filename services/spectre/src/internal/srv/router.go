@@ -20,10 +20,6 @@ type Router struct {
 	mux http.Handler
 }
 
-type apiHandler interface {
-	GetAll(w http.ResponseWriter, r *http.Request)
-}
-
 func NewRouter(s st.Storage, log *logger.Logger, cr *proxy.CryptoClient) *Router {
 	mux := http.NewServeMux()
 
