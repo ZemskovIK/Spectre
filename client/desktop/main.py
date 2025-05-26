@@ -307,9 +307,9 @@ class MilitaryLettersApp:
         try:
             if query.isdigit():
                 self._search_by_letter_id(query)
-                print(f"[DEBU] Author")
+                print(f"[DEBU] searchID")
             else:
-                print(f"[DEBU] Author")
+                print(f"[DEBU] searchAuthor")
                 self._search_by_author(query)
         except Exception as e:
             messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
