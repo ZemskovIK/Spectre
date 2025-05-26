@@ -126,7 +126,7 @@ export default function MailApp() {
     } catch (error) {
       console.error("Ошибка загрузки писем:", error);
       if (error.response && error.response.status === 401) {
-        handleLogout();
+        console.log(lol);
       }
     }
   };
@@ -151,7 +151,7 @@ export default function MailApp() {
     } catch (error) {
       console.error("Ошибка загрузки писем:", error);
       if (error.response && error.response.status === 401) {
-        handleLogout();
+        console.log("lol");
       }
     }
     console.log(localStorage.getItem("token"));
@@ -218,7 +218,7 @@ export default function MailApp() {
     } catch (error) {
       console.error("Ошибка удаления:", error);
       if (error.response && error.response.status === 401) {
-        handleLogout();
+        console.log("lol");
       }
     } finally {
       setMessages(messages.filter((msg) => msg.id !== id));
@@ -234,7 +234,7 @@ export default function MailApp() {
     } catch (error) {
       console.error("Ошибка удаления:", error);
       if (error.response && error.response.status === 401) {
-        handleLogout();
+        console.log("lol");
       }
     } finally {
       setUsers(users.filter((msg) => msg.id !== id));
@@ -267,7 +267,7 @@ export default function MailApp() {
     } catch (error) {
       console.error("Ошибка редактирования:", error);
       if (error.response && error.response.status === 401) {
-        handleLogout();
+        console.log("lol");
       }
     } finally {
       setLoading(false);
@@ -297,7 +297,7 @@ export default function MailApp() {
     } catch (error) {
       console.error("Ошибка редактирования:", error);
       if (error.response && error.response.status === 401) {
-        handleLogout();
+        console.log("lol");
       }
     } finally {
       setLoading(false);
@@ -325,7 +325,7 @@ export default function MailApp() {
     } catch (error) {
       console.error("Ошибка отправки:", error);
       if (error.response && error.response.status === 401) {
-        handleLogout();
+        console.log("lol");
       }
     } finally {
       setLoading(false);
@@ -351,7 +351,7 @@ export default function MailApp() {
     } catch (error) {
       console.error("Ошибка отправки:", error);
       if (error.response && error.response.status === 401) {
-        handleLogout();
+        console.log("lol");
       }
     } finally {
       setLoading(false);
@@ -447,7 +447,7 @@ export default function MailApp() {
               className="text-lg font-semibold"
               onClick={HandleChangeShowContent}
             >
-              Пользователи ({users.length}) Письма ({messages.length})
+              Пользователи ({users.length})
             </h2>
           </div>
           <UsersList
