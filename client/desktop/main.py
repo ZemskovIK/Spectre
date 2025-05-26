@@ -2,10 +2,10 @@ from  tkinter import *
 from tkinter import ttk, messagebox, PhotoImage
 import requests
 import jwt
-import os
 import json
 import base64
 import crypto
+from pyi_resource import resource_path
 
 class MilitaryLettersApp:
     def __init__(self, root):
@@ -18,8 +18,7 @@ class MilitaryLettersApp:
         x = (screen_width - window_width) // 2
         y = (screen_height - window_height) // 2
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        icon_path = os.path.join(os.path.dirname(__file__), "letters.png")
-        self.img = PhotoImage(file=icon_path)
+        self.img = PhotoImage(file=resource_path("letters.png"))
         self.root.iconphoto(True, self.img)
         
         self.style = ttk.Style()
