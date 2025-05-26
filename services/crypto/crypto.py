@@ -28,7 +28,7 @@ class ECDHKeyExchange:
         return base64.b64encode(public_bytes).decode()
 
     def compute_shared_secret(self, other_pub_base64: str):
-        # Вычисляет ключи AES + HMAC по чужому публичному ключу
+        # Вычисляет ключи AES + HMAC по общему секрету, вычисляемому из чужого публичного и своего приватного ключей
         other_pub_bytes = base64.b64decode(other_pub_base64)
         other_public_key = ec.EllipticCurvePublicKey.from_encoded_point(
             ec.SECP256R1(), other_pub_bytes
