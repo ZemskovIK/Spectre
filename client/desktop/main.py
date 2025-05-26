@@ -58,7 +58,8 @@ class MilitaryLettersApp:
         password = self.password_entry.get()
         
         if not login or not password:
-            messagebox.showerror("Ошибка", "Введите логин и пароль")
+            error_msg = "Введите логин и пароль"
+            messagebox.showerror("Ошибка", error_msg)
             return
         
         try:
@@ -69,17 +70,48 @@ class MilitaryLettersApp:
             
             if response.status_code == 200:
                 self.token = response.json().get("token")
+                self.current_user = login
+                
+                if not self.token:
+                    error_msg = "Токен отсутствует в ответе сервера"
+                    messagebox.showerror("Ошибка", error_msg)
+                    return
+                
                 try:
-                    payload = jwt.decode(self.token, "test_secret", algorithms=["HS256"])
+                    unverified_payload = jwt.decode(
+                        self.token,
+                        options={"verify_signature": False},
+                        algorithms=["HS256"]
+                    )
+                    
+                    if "sub" in unverified_payload:
+                        if not isinstance(unverified_payload["sub"], str):
+                            unverified_payload["sub"] = str(unverified_payload["sub"])
+                    
+                    payload = jwt.decode(
+                        self.token,
+                        "test_secret",
+                        algorithms=["HS256"],
+                        options={"verify_sub": False}
+                    )
+                    
                     self.user_role = payload.get("role", 1)
-                except:
+                    
+                except Exception as e:
+                    error_msg = f"Ошибка декодирования токена: {str(e)}"
                     self.user_role = 1
                     
                 self.show_main_interface()
             else:
-                messagebox.showerror("Ошибка", "Неверный логин или пароль")
+                error_msg = response.json().get("message", "Неверный логин или пароль")
+                messagebox.showerror("Ошибка", error_msg)
+                
         except requests.exceptions.RequestException as e:
-            messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
+            error_msg = f"Ошибка подключения: {str(e)}"
+            messagebox.showerror("Ошибка", error_msg)
+        except Exception as e:
+            error_msg = f"Неожиданная ошибка: {str(e)}"
+            messagebox.showerror("Ошибка", error_msg)
     
     def show_main_interface(self):
         for widget in self.root.winfo_children():
