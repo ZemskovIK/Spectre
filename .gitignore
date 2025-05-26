@@ -7,3 +7,10 @@ services/crypto/client.py
 services/crypto/server_test.py
 services/crypto/Tasks.md
 services/crypto/__pycache__/
+client/desktop/__pycache__/crypto.cpython-313.pyc
+venv/pyvenv.cfg
+venv/bin/python
+venv/bin/python3
+venv/bin/python3.12
+client/desktop/__pycache__/crypto.cpython-313.pyc
+client/desktop/__pycache__/crypto.cpython-313.pyc
