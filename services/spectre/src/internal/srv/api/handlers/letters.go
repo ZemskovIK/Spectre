@@ -14,7 +14,7 @@ import (
 	"spectre/pkg/logger"
 )
 
-const GLOC_LTS = "src/internal/api/handlers/letters.go" // for logging
+const GLOC_LTS = "src/internal/api/handlers/letters.go/" // for logging
 
 type lettersStore interface {
 	GetAllLettersWithAccess(accessLevel int) ([]models.Letter, error)
@@ -131,8 +131,19 @@ func (h *lettersHandler) GetOne(
 	h.log.Debugf("%s: successfully retrieved letter: %+v", loc, letter)
 
 	// ! TODO : encrypt
+	b64, err := lib.ToBase64Slice([]models.Letter{letter})
+	if err != nil {
+		response.ErrCannotGetB64Strings(w)
+		return
+	}
+	resp, err := h.crypto.Encrypt(b64)
+	if err != nil {
+		h.log.Errorf("%s: cannot encrypt data: %v", loc, err)
+		response.ErrCannotEncryptData(w)
+		return
+	}
 
-	response.Ok(w, letter)
+	response.OkWithResponse(w, resp)
 }
 
 // Delete removes a letter by id.
@@ -198,13 +209,19 @@ func (h *lettersHandler) Add(
 		return
 	}
 
-	var letter models.Letter
-	if err := json.NewDecoder(r.Body).Decode(&letter); err != nil {
-		h.log.Errorf("%s: failed to decode JSON body: %v", loc, err)
-		response.ErrInvalidRequest(w, "invalid JSON")
+	// ! TODO : decrypt
+	resp, err := h.crypto.Decrypt(r)
+	if err != nil {
+		h.log.Errorf("%s: error cannot decrypt data: %v", loc, err)
+		response.ErrCannotDecryptData(w)
 		return
 	}
-	h.log.Debugf("%s: decoded letter: %+v", loc, letter)
+	var letter models.Letter
+	if err := lib.FetchLetterFromB64(&letter, resp.Content); err != nil {
+		h.log.Errorf("%s: error cannot fetch letter from b64: %v", loc, err)
+		// TODO response
+		return
+	}
 
 	// ! TODO validation func
 	if letter.Body == "" {

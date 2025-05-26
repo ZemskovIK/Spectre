@@ -55,3 +55,25 @@ func (c *CryptoClient) Encrypt(b64 []string) (response.Response, error) {
 
 	return res, nil
 }
+
+func (c *CryptoClient) Decrypt(r *http.Request) (response.Response, error) {
+	resp, err := c.Client.Post(
+		c.DecryptEndpoint,
+		"application/json",
+		r.Body,
+	)
+	if err != nil {
+		return response.Response{}, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return response.Response{}, errBadStatusCode(resp.StatusCode)
+	}
+
+	var res response.Response
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return response.Response{}, err
+	}
+
+	return res, nil
+}

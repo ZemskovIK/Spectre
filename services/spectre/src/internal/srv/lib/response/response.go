@@ -134,3 +134,7 @@ func ErrCannotGetB64Strings(w http.ResponseWriter) {
 func ErrCannotEncryptData(w http.ResponseWriter) {
 	WriteError(w, http.StatusBadGateway, "cannot encrypt data!")
 }
+
+func ErrCannotDecryptData(w http.ResponseWriter) {
+	WriteError(w, http.StatusBadGateway, "cannot decrypt data!")
+}
