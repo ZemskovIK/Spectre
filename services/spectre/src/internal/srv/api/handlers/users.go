@@ -226,25 +226,29 @@ func (h *usersHandler) Update(
 
 	type user struct {
 		models.User
-		Pass string `json:"password"`
+		Password string `json:"password"`
 	}
 	var usr user
-	if err := json.NewDecoder(r.Body).Decode(&usrAccessLevel); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&usr); err != nil {
 		h.log.Errorf("%s: failed to decode JSON body: %v", loc, err)
 		response.ErrInvalidRequest(w, "invalid JSON")
 		return
 	}
 	usr.ID = id
+	usr.PHash = []byte(usr.Password)
 
 	// ! TODO validation func
 	if usr.Login == "" {
-		h.log.Errorf("%s: login cannot be empty!", loc)
-		response.ErrInvalidRequest(w, "body cannot be empty")
+		response.ErrInvalidRequest(w, "login cannot be empty!")
 		return
 	}
-	if usr.AccessLevel < 1 || usr.AccessLevel > lib.ADMIN_ALEVEL {
-		h.log.Errorf("%s: invalid access level!", loc)
-		response.ErrInvalidRequest(w, "invalid usr access level!")
+	if usr.Password == "" {
+		response.ErrInvalidRequest(w, "password cannot be empty!")
+		return
+	}
+	if usr.AccessLevel < 1 || usrAccessLevel > lib.ADMIN_ALEVEL {
+		response.ErrInvalidRequest(w, "invalid access_level "+strconv.Itoa(usr.AccessLevel))
+		return
 	}
 
 	if err := h.st.UpdateUser(usr.User); err != nil {
