@@ -306,8 +306,8 @@ class MilitaryLettersApp:
         
         try:
             if query.isdigit():
-                self._search_by_letter_id(query)
                 print(f"[DEBU] searchID")
+                self._search_by_letter_id(query)
             else:
                 print(f"[DEBU] searchAuthor")
                 self._search_by_author(query)
@@ -319,13 +319,20 @@ class MilitaryLettersApp:
             "GET", 
             f"{self.api_url}/api/letters/{letter_id}"
         )
-        response_data = response.json()
+        response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
         
-        if response.status_code == 200 and response_data.get("content"):
-            self.display_results([response_data["content"]])
-        else:
-            error_msg = response_data.get("error", "Письмо не найдено")
+        if response.status_code != 200:
+            error_msg = response.json().get("error", "Не удалось получить список писем")
             messagebox.showerror("Ошибка", error_msg)
+            return
+        
+        bytes_data = base64.b64decode(response_data.get("content")[0])
+        json_data = json.loads(bytes_data.decode('utf-8'))
+        
+        if json_data:
+            self.display_results([json_data])
+        else:
+            messagebox.showinfo("Информация", "Письмо с данным ID не найдено")
 
     def _search_by_author(self, author_name):
         response = self.make_authenticated_request(
@@ -344,7 +351,7 @@ class MilitaryLettersApp:
                 bytes_data = base64.b64decode(item)
                 json_data = json.loads(bytes_data.decode('utf-8'))
                 all_letters.append(json_data)
-                
+                                
         results = [
             letter for letter in all_letters 
             if str(letter.get("author", "")).lower() == author_name.lower()
@@ -362,15 +369,13 @@ class MilitaryLettersApp:
                 f"{self.api_url}/api/letters"
             )
             response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
-            
+
             result = []
             for item in response_data.get("content"):
                 bytes_data = base64.b64decode(item)
                 json_data = json.loads(bytes_data.decode('utf-8'))
                 result.append(json_data)
-                
-            print(f"[INFO] {result}")
-            
+                            
             self.results_body.config(state=NORMAL)
             self.results_body.delete("1.0", END)
             
@@ -407,9 +412,10 @@ class MilitaryLettersApp:
                 "GET", 
                 f"{self.api_url}/api/letters/{letter_id}"
             )
-            
+            response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
             if response.status_code == 200:
-                letter_data = response.json().get("content")
+                bytes_data = base64.b64decode(response_data.get("content")[0])
+                letter_data = json.loads(bytes_data.decode('utf-8'))
 
                 if letter_data:    
                     self.update_author.delete(0, END)
@@ -424,8 +430,7 @@ class MilitaryLettersApp:
                 else:
                     messagebox.showerror("Ошибка", "Данные письма не получены")
             else:
-                error_msg = response.json().get("error", "Письмо не найдено")
-                messagebox.showerror("Ошибка", error_msg)
+                messagebox.showinfo("Информация", "Письмо с данным ID не найдено")
         except requests.exceptions.RequestException as e:
             messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
     
