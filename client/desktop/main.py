@@ -545,6 +545,32 @@ def decrypt(data, aes_key, hmac_key):
     print(f"\nmain.py | decrypt() result: {result}\n")
     return result
 
+def encrypt(data, aes_key, hmac_key):
+    # data = request.get_json()
+    # content = [base64.b64decode(data['content'][0]).decode("utf-8")]
+
+    # json_str = json.dumps(content)
+    # content = json_str.encode('utf-8')
+
+    print(f"\nmain.py | encrypt() data in bytes: {data}\n")
+    # print(f"\nserver.py | encrypt() content: {content}\n")
+
+    crypto_box = crypto.Aes256CbcHmac(aes_key, hmac_key)
+    nonce = os.urandom(12)
+
+    encrypted_text = crypto_box.encrypt(data, nonce)
+
+    print(f"\nmain.py | encrypt() encrypted_text: {encrypted_text}\n")
+
+    # data_list = json.loads(encrypted_text.decode('utf-8'))
+    # content_base64_list = [base64.b64encode(item.encode('utf-8')).decode('utf-8')
+    #     for item in data_list]
+    # result = {
+    #     "content": content_base64_list
+    # }
+
+    return jsonify(encrypted_text)
+
 def ecdh_post(client):
     # Создаем ключи для обмена Диффи-Хеллмана и отправляем публичный ключ серверу
     client = crypto.ECDHKeyExchange() # 4
