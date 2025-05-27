@@ -34,6 +34,9 @@ func ToBase64Slice[T any](data []T) ([]string, error) {
 	return res, nil
 }
 
+// FetchLetterFromB64 decodes a base64-encoded JSON string from a slice and unmarshals it into a Letter.
+// Expects b64 to be a slice with the first element as a base64-encoded string.
+// Returns an error if decoding or unmarshalling fails.
 func FetchLetterFromB64(l *models.Letter, b64 interface{}) error {
 	sl, ok := b64.([]interface{})
 	if !ok {

@@ -135,6 +135,7 @@ func ErrCannotEncryptData(w http.ResponseWriter) {
 	WriteError(w, http.StatusBadGateway, "cannot encrypt data!")
 }
 
+// ErrCannotDecryptData sends a 502 error when decryption service is unavailable or failed.
 func ErrCannotDecryptData(w http.ResponseWriter) {
 	WriteError(w, http.StatusBadGateway, "cannot decrypt data!")
 }

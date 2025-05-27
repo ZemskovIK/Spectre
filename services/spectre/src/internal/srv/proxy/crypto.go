@@ -56,6 +56,8 @@ func (c *CryptoClient) Encrypt(b64 []string) (response.Response, error) {
 	return res, nil
 }
 
+// Decrypt sends the request body to the external decryption service and decodes the response.
+// Returns a response.Response struct with the result or an error if the request fails or the response is invalid.
 func (c *CryptoClient) Decrypt(r *http.Request) (response.Response, error) {
 	resp, err := c.Client.Post(
 		c.DecryptEndpoint,
