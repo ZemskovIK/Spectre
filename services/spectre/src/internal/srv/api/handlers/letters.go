@@ -3,7 +3,6 @@ package handlers
 // ! TODO : think about copy-paste
 
 import (
-	"encoding/json"
 	"net/http"
 	"spectre/internal/models"
 	"spectre/internal/srv/api"
@@ -74,11 +73,13 @@ func (h *lettersHandler) GetAll(
 	// ! TODO : encrypt
 	b64, err := lib.ToBase64Slice(letters)
 	if err != nil {
+		h.log.Errorf("%s: cannot converto to b64: %v", loc, err)
 		response.ErrCannotGetB64Strings(w)
 		return
 	}
 	resp, err := h.crypto.Encrypt(b64)
 	if err != nil {
+		h.log.Errorf("%s: cannot enctypt: %v", loc, err)
 		response.ErrCannotEncryptData(w)
 		return
 	}
@@ -130,8 +131,20 @@ func (h *lettersHandler) GetOne(
 	h.log.Debugf("%s: successfully retrieved letter: %+v", loc, letter)
 
 	// ! TODO : encrypt
+	b64, err := lib.ToBase64(letter)
+	if err != nil {
+		h.log.Errorf("%s: cannot converto to b64: %v", loc, err)
+		response.ErrCannotGetB64Strings(w)
+		return
+	}
+	resp, err := h.crypto.Encrypt([]string{b64})
+	if err != nil {
+		h.log.Errorf("%s: cannot enctypt: %v", loc, err)
+		response.ErrCannotEncryptData(w)
+		return
+	}
 
-	response.Ok(w, letter)
+	response.OkWithResponse(w, resp)
 }
 
 // Delete removes a letter by id.
@@ -197,13 +210,15 @@ func (h *lettersHandler) Add(
 		return
 	}
 
-	var letter models.Letter
-	if err := json.NewDecoder(r.Body).Decode(&letter); err != nil {
-		h.log.Errorf("%s: failed to decode JSON body: %v", loc, err)
-		response.ErrInvalidRequest(w, "invalid JSON")
+	// ! TODO : dectypt
+	resp, err := h.crypto.Decrypt(r)
+	if err != nil {
+		h.log.Errorf("%s: cannot decrypt %v", loc, err)
+		response.ErrCannotDecryptData(w)
 		return
 	}
-	h.log.Debugf("%s: decoded letter: %+v", loc, letter)
+	var letter models.Letter
+	lib.FetchLetterFromB64(&letter, resp.Content)
 
 	// ! TODO validation func
 	if letter.Body == "" {
@@ -272,11 +287,6 @@ func (h *lettersHandler) Update(
 		return
 	}
 
-	// if err := json.NewDecoder(r.Body).Decode(&letter); err != nil {
-	// 	h.log.Errorf("%s: failed to decode JSON body: %v", loc, err)
-	// 	response.ErrInvalidRequest(w, "invalid JSON")
-	// 	return
-	// }
 	letter.ID = id
 	h.log.Debugf("%s: decoded letter for update: %+v", loc, letter)
 
