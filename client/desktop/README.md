@@ -1,7 +1,8 @@
 # 📜 Архив военных писем - Клиентское приложение
 
-![](https://github.com/ZemskovIK/Spectre/blob/63d8776837d40195fdbace67dd7d4310e5f5046a/client/desktop/client.png)
-
+<div align="center">
+  <img src="https://github.com/ZemskovIK/Spectre/blob/63d8776837d40195fdbace67dd7d4310e5f5046a/client/desktop/client.png" width="50%" />
+</div>
 
 ## 🌿 Ветки проекта
 - `main` - основная версия с базовой функциональностью и системой аутентификации
