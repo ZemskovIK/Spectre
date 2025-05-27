@@ -14,7 +14,7 @@ import (
 	"spectre/pkg/logger"
 )
 
-const GLOC_LTS = "src/internal/api/handlers/letters.go" // for logging
+const GLOC_LTS = "src/internal/api/handlers/letters.go/" // for logging
 
 type lettersStore interface {
 	GetAllLettersWithAccess(accessLevel int) ([]models.Letter, error)

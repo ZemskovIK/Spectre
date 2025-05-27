@@ -14,11 +14,9 @@ const (
 // Returns the string ID, integer ID, and error if conversion fails.
 func GetID(point, pattern string) (string, int, error) {
 	var sid string
-
 	if parts := strings.Split(pattern, point); len(parts) > 1 {
 		sid = parts[1]
 	}
-
 	id, err := strconv.Atoi(sid)
 	if err != nil {
 		return sid, -1, err
