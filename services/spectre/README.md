@@ -84,19 +84,15 @@
 **Успех (200 OK):**
 ```json
 {
-  "content": [
-    "base64string1",
-    "base64string2",
-    "base64string3"
-  ],
-  "error": null,
-  "iv": "base64string",
-  "hmac": "base64string",
-  "nonce": "base64string"
+    "content": "base64string...TCm0oI...QDCCFs=",
+    "error": null,
+    "iv": "base64string...TCm0oI...QDCCFs=",
+    "hmac": "base64string...TCm0oI...QDCCFs=",
+    "nonce": "base64string...TCm0oI...QDCCFs="
 }
 ```
 
-**Ошибка (500 Internal Server Error):**
+**Ошибка (500 | 502):**
 ```json
 {
   "content": null,
@@ -116,15 +112,15 @@
 **Успех (200 OK):**
 ```json
 {
-  "content": "base64string",
-  "error": null,
-  "iv": "base64string",
-  "hmac": "base64string",
-  "nonce": "base64string"
+    "content": "base64string...TCm0oI...QDCCFs=",
+    "error": null,
+    "iv": "base64string...TCm0oI...QDCCFs=",
+    "hmac": "base64string...TCm0oI...QDCCFs=",
+    "nonce": "base64string...TCm0oI...QDCCFs="
 }
 ```
 
-**Ошибка (500 Internal Server Error):**
+**Ошибка (500 | 502 | 400 | 404 | 403):**
 ```json
 {
   "content": null,
@@ -152,7 +148,7 @@
 }
 ```
 
-**Ошибка (500 Internal Server Error):**
+**Ошибка (500 | 403 | 400 | 404):**
 ```json
 {
   "content": null,
@@ -172,16 +168,11 @@
 **Тело запроса (application/json):**
 ```json
 {
-  "cipher_bytes": "base64string"
-}
-```
-где шифруется структура вида
-```json
-{
-  "author": "Author Name",
-  "found_at": "2005-11-11T00:00:00Z",
-  "found_in": "Место находки",
-  "body": "Текст письма"
+    "content": "base64string...TCm0oI...QDCCFs=",
+    "error": null,
+    "iv": "base64string...TCm0oI...QDCCFs=",
+    "hmac": "base64string...TCm0oI...QDCCFs=",
+    "nonce": "base64string...TCm0oI...QDCCFs="
 }
 ```
 
@@ -196,7 +187,7 @@
 }
 ```
 
-**Ошибка (422 | 400):**
+**Ошибка (500 | 502 | 403 | 400 | 422):**
 ```json
 {
   "content": null,
@@ -216,16 +207,11 @@
 **Тело запроса (application/json):**
 ```json
 {
-  "cipher_bytes": "base64string"
-}
-```
-где шифруется структура вида
-```json
-{
-  "author": "Author Name",
-  "found_at": "2005-11-11T00:00:00Z",
-  "found_in": "Место находки",
-  "body": "Текст письма"
+    "content": "base64string...TCm0oI...QDCCFs=",
+    "error": null,
+    "iv": "base64string...TCm0oI...QDCCFs=",
+    "hmac": "base64string...TCm0oI...QDCCFs=",
+    "nonce": "base64string...TCm0oI...QDCCFs="
 }
 ```
 
@@ -240,7 +226,7 @@
 }
 ```
 
-**Ошибка (500 | 400 | 404):**
+**Ошибка (500 | 502 | 403 | 400 | 404):**
 ```json
 {
   "content": null,
@@ -255,6 +241,6 @@
 
 ## Примечания
 
-- Все поля, связанные с шифрованием (`cipher_bytes`, `iv`, `hmac`, `nonce`), обязательны для корректной работы клиента.
+- Все поля, связанные с шифрованием (`content`, `iv`, `hmac`, `nonce`), обязательны для корректной работы клиента.
 - Клиент отвечает за расшифровку данных и проверку целостности.
 - Для доступа к API требуется JWT-токен, который передаётся в заголовке `Authorization: Bearer <TOKEN>`.
