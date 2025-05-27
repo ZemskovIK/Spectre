@@ -158,6 +158,10 @@ class MilitaryLettersApp:
             self.users_tab = ttk.Frame(self.tab_control)
             self.tab_control.add(self.users_tab, text='Управление пользователями')
             self.create_users_tab()
+            
+            self.create_user_tab = ttk.Frame(self.tab_control)
+            self.tab_control.add(self.create_user_tab, text='Создать пользователя')
+            self.create_add_user_tab()
         
     def logout(self):
         self.token = None
@@ -514,6 +518,18 @@ class MilitaryLettersApp:
             f"{self.api_url}/api/users/{user_id}"
         )
         return response.json() if response else None
+    
+    def create_user(self, login, password, access_level):
+        response = self.make_authenticated_request(
+            "POST", 
+            f"{self.api_url}/api/users",
+            json={
+                "login": login,
+                "password": password,
+                "access_level": access_level
+            }
+        )
+        return response.json() if response else None
 
     def delete_user(self, user_id):
         response = self.make_authenticated_request(
@@ -540,6 +556,26 @@ class MilitaryLettersApp:
         
         delete_btn = ttk.Button(frame, text="Удалить пользователя", command=self.delete_user_action)
         delete_btn.grid(row=3, column=1, pady=10, sticky=E)
+        
+    def create_add_user_tab(self):
+        frame = ttk.Frame(self.create_user_tab)
+        frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+        
+        ttk.Label(frame, text="Логин:").grid(row=0, column=0, sticky=W, pady=5)
+        self.new_user_login = ttk.Entry(frame, width=30)
+        self.new_user_login.grid(row=0, column=1, pady=5, padx=5)
+        
+        ttk.Label(frame, text="Пароль:").grid(row=1, column=0, sticky=W, pady=5)
+        self.new_user_password = ttk.Entry(frame, width=30, show="*")
+        self.new_user_password.grid(row=1, column=1, pady=5, padx=5)
+        
+        ttk.Label(frame, text="Уровень доступа:").grid(row=2, column=0, sticky=W, pady=5)
+        self.new_user_access = ttk.Combobox(frame, width=27, values=[1, 2, 3, 4, 5, 6])
+        self.new_user_access.grid(row=2, column=1, pady=5, padx=5)
+        self.new_user_access.current(0)
+        
+        create_btn = ttk.Button(frame, text="Создать пользователя", command=self.create_user_action)
+        create_btn.grid(row=3, column=1, pady=10, sticky=E)
         
     def search_user(self):
         user_id = self.user_id_entry.get()
@@ -584,6 +620,28 @@ class MilitaryLettersApp:
                     messagebox.showerror("Ошибка", error_msg)
             except Exception as e:
                 messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
+                
+    def create_user_action(self):
+        login = self.new_user_login.get()
+        password = self.new_user_password.get()
+        access_level = self.new_user_access.get()
+        
+        if not login or not password:
+            messagebox.showerror("Ошибка", "Логин и пароль обязательны")
+            return
+        
+        try:
+            result = self.create_user(login, password, int(access_level))
+            if result and result.get("error") is None:
+                messagebox.showinfo("Успех", "Пользователь успешно создан")
+                self.new_user_login.delete(0, END)
+                self.new_user_password.delete(0, END)
+                self.new_user_access.current(0)
+            else:
+                error_msg = result.get("error", "Неизвестная ошибка") if result else "Ошибка соединения"
+                messagebox.showerror("Ошибка", error_msg)
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
 
 if __name__ == "__main__":
     root = Tk()
