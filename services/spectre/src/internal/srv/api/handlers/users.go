@@ -7,11 +7,12 @@ import (
 	"spectre/internal/srv/api"
 	"spectre/internal/srv/lib"
 	"spectre/internal/srv/lib/response"
+	st "spectre/internal/storage"
 	"spectre/pkg/logger"
 	"strconv"
 )
 
-const GLOC_USRS = "src/internal/api/handlers/users.go" // for logging
+const GLOC_USRS = "src/internal/api/handlers/users.go/" // for logging
 
 type usersStore interface {
 	GetUserByLogin(login string) (models.User, error)
@@ -193,6 +194,67 @@ func (h *usersHandler) Add(
 
 	if err := h.st.SaveUser(usr.User); err != nil {
 		response.ErrCannotSave(w)
+		return
+	}
+
+	response.Ok(w, nil)
+}
+
+func (h *usersHandler) Update(
+	w http.ResponseWriter, r *http.Request,
+) {
+	loc := GLOC_USRS + "Update()"
+
+	usrAccessLevel, ok := lib.FetchAccessLevelFromCtx(r.Context())
+	if !ok {
+		h.log.Errorf("%s: failed to fetch access level from context", loc)
+		response.ErrCannotUpdate(w)
+		return
+	}
+	if usrAccessLevel < lib.ADMIN_ALEVEL {
+		h.log.Warnf("%s: blocked to get users, access: %d, required: %d", loc, usrAccessLevel, lib.ADMIN_ALEVEL)
+		response.ErrYouArntAdmin(w)
+		return
+	}
+
+	sid, id, err := lib.GetID(api.USER_POINT, r.RequestURI)
+	if err != nil {
+		h.log.Errorf("%s: invalid id '%s' in URI '%s': %v", loc, sid, r.RequestURI, err)
+		response.ErrInvalidID(w, sid)
+		return
+	}
+
+	type user struct {
+		models.User
+		Pass string `json:"password"`
+	}
+	var usr user
+	if err := json.NewDecoder(r.Body).Decode(&usrAccessLevel); err != nil {
+		h.log.Errorf("%s: failed to decode JSON body: %v", loc, err)
+		response.ErrInvalidRequest(w, "invalid JSON")
+		return
+	}
+	usr.ID = id
+
+	// ! TODO validation func
+	if usr.Login == "" {
+		h.log.Errorf("%s: login cannot be empty!", loc)
+		response.ErrInvalidRequest(w, "body cannot be empty")
+		return
+	}
+	if usr.AccessLevel < 1 || usr.AccessLevel > lib.ADMIN_ALEVEL {
+		h.log.Errorf("%s: invalid access level!", loc)
+		response.ErrInvalidRequest(w, "invalid usr access level!")
+	}
+
+	if err := h.st.UpdateUser(usr.User); err != nil {
+		if err.Error() == st.ErrLetterNotFound(id).Error() {
+			h.log.Warnf("%s: user with id not found: %v", loc, err)
+			response.ErrNotFound(w, sid)
+		} else {
+			h.log.Errorf("%s: error when updating user: %v", loc, err)
+			response.ErrCannotUpdate(w)
+		}
 		return
 	}
 

@@ -67,6 +67,9 @@ func NewRouter(s st.Storage, log *logger.Logger, cr *proxy.CryptoClient) *Router
 	mux.Handle(methods.POST(api.USERS_POINT),
 		http.HandlerFunc(usersHL.Add),
 	)
+	mux.Handle(methods.PUT(api.USER_POINT),
+		http.HandlerFunc(usersHL.Update),
+	)
 
 	// auth
 	mux.Handle(methods.POST(auth.LOGIN_POINT),
