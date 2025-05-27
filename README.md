@@ -162,25 +162,25 @@
 
 ### Ручной запуск
 
-```
+```bash
 git clone https://github.com/ZemskovIK/Spectre.git
-cd services/crypto/
+cd Spectre/services/crypto/
 pip install -r requirements.txt
 ```
 или ручная установка библиотек из этого файла
 
-```
+```bash
 gunicorn --bind 0.0.0.0:7654 server:app --workers 3
 ```
 для асинхронного выполнения на 3-х воркерах.
 
-```
+```bash
 cd ../spectre/src/
 go mod tidy
 ```
 Запуск на большинстве Linux-дистрибутивов стабильный. На Windows возможно потребуется установка пакета компиляторов gcc и выставление опции (переменной окружения CGO).
 
-```
+```bash
 go run cmd/migrator/main.go -action up
 go run cmd/spectre/main.go
 ```
@@ -189,13 +189,13 @@ go run cmd/spectre/main.go
 Для локальной работы с web-клиентом:  
 Установка зависимостей:
 
-```
+```bash
 npm install
 ```
 
 из директории `Spectre` (корня проекта) с имеющимся react и зависимостями
 
-```
+```bash
 cd client/web/src/
 npm run dev
 ```
@@ -205,13 +205,21 @@ npm run dev
 либо ручной запуск exe из client/desktop/dist  
 либо из `Spectre`:
 
-```
+```bash
 python3 main.py
 ```
 
 ### Docker
 
-...
+```bash
+git clone https://github.com/ZemskovIK/Spectre.git
+cd Spectre/services/
+```
+проверить .env конфигурацию
+```bash
+docker-compose up
+```
+возможно с флагом `-d` для запуска в фоне
 
 ---
 
