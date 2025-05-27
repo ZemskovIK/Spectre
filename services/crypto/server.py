@@ -57,8 +57,9 @@ def decrypt():
     decrypted_text = crypto_box.decrypt(data)
 
     data_list = json.loads(decrypted_text.decode('utf-8'))
+    print(f"server.py | decrypt() result: 'content': {data_list}")
     content_base64_list = [base64.b64encode(item.encode('utf-8')).decode('utf-8')
-        for item in data_list]
+        for key, item in data_list.items()]
     result = {
         "content": content_base64_list
     }
