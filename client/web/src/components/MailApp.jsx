@@ -131,13 +131,14 @@ export default function MailApp() {
     }
   };
 
-  function HandleChangeShowContent() {
+  function HandleChangeShowContentTo2() {
     fetchUsers();
-    if (showContent == "1") {
-      setShowContent("2");
-    } else {
-      setShowContent("1");
-    }
+    setShowContent("2");
+  }
+
+  function HandleChangeShowContentTo1() {
+    fetchUsers();
+    setShowContent("1");
   }
 
   const fetchMessages = async () => {
@@ -411,16 +412,29 @@ export default function MailApp() {
           <div className="pl-6 pt-1 pb-2 border-b">
             {isAdmin == 6 ? (
               <>
-                <h2 className="text-lg font-semibold">
-                  Письма ({messages.length}){" "}
-                  <span
-                    className="cursor-pointer hover:text-blue-500"
-                    onClick={HandleChangeShowContent}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={HandleChangeShowContentTo1}
+                    className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+                      isEditingUsers
+                        ? "bg-gray-500 hover:bg-gray-700"
+                        : "bg-gray-600 hover:bg-gray-700"
+                    }`}
                   >
-                    <strong>&#8592;</strong>
-                  </span>{" "}
-                  Пользователи ({users.length})
-                </h2>
+                    Письма ({messages.length})
+                  </button>
+
+                  <button
+                    onClick={HandleChangeShowContentTo2}
+                    className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+                      !isEditingUsers
+                        ? "bg-gray-500 hover:bg-gray-700"
+                        : "bg-gray-600 hover:bg-gray-700"
+                    }`}
+                  >
+                    Пользователи ({users.length})
+                  </button>
+                </div>
               </>
             ) : (
               <h2 className="text-lg font-semibold">
@@ -448,18 +462,27 @@ export default function MailApp() {
         >
           <div className="pl-6 pt-1 pb-2 border-b">
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold inline-block">
-                Письма ({messages.length})
-              </h2>
-              <span
-                className="cursor-pointer hover:text-blue-500 text-lg"
-                onClick={HandleChangeShowContent}
+              <button
+                onClick={HandleChangeShowContentTo1}
+                className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+                  !isEditingUsers
+                    ? "bg-gray-500 hover:bg-gray-700"
+                    : "bg-gray-600 hover:bg-gray-700"
+                }`}
               >
-                →
-              </span>
-              <h2 className="text-lg font-semibold inline-block">
+                Письма ({messages.length})
+              </button>
+
+              <button
+                onClick={HandleChangeShowContentTo2}
+                className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+                  isEditingUsers
+                    ? "bg-gray-500 hover:bg-gray-700"
+                    : "bg-gray-600 hover:bg-gray-700"
+                }`}
+              >
                 Пользователи ({users.length})
-              </h2>
+              </button>
             </div>
           </div>
           <UsersList
