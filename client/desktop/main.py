@@ -5,6 +5,7 @@ import jwt
 import json
 import base64
 import crypto
+import os
 from pyi_resource import resource_path
 
 class MilitaryLettersApp:
@@ -281,11 +282,14 @@ class MilitaryLettersApp:
             messagebox.showerror("Ошибка", "Все поля должны быть заполнены")
             return
         
+        content_bytes = json.dumps(content).encode('utf-8')
+        letter_data = encrypt(content_bytes, self.aes_key, self.hmac_key)
+                
         try:
             response = self.make_authenticated_request(
                 "POST", 
                 f"{self.api_url}/api/letters",
-                json=content
+                json=letter_data
             )
             response_data = response.json()
            
@@ -569,7 +573,7 @@ def encrypt(data, aes_key, hmac_key):
     #     "content": content_base64_list
     # }
 
-    return jsonify(encrypted_text)
+    return json.dumps(encrypted_text)
 
 def ecdh_post(client):
     # Создаем ключи для обмена Диффи-Хеллмана и отправляем публичный ключ серверу
