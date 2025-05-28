@@ -9,6 +9,7 @@ PORT = 7654
 HOST = '0.0.0.0'
 
 app = Flask(__name__)
+keys_by_users = {}
 
 # Json такого вида:
 # {
@@ -80,15 +81,27 @@ def decrypt():
 
 @app.route('/ecdh', methods=['POST'])
 def ecdh():
-    # {
-    #     content: ["base64string_client_public_key"]
-    # }
+    global keys_by_user
     data = request.get_json()
     print(f"\nserver.py | ecdh() data: {data}\n")
     # json_str = json.dumps(data["content"])
     # print(f"\nserver.py | ecdh() json_str: {json_str}\n")
-    client_pub = json.dumps(data["content"])
-    print(f"\nserver.py | ecdh() client_pub: {client_pub}\n")
+    if len(data) == 1:
+        user_ip = json.dumps(data["from"])
+
+        print(f"\nserver.py | ecdh()1 user_ip: {user_ip}\n")
+
+        server = crypto.ECDHKeyExchange()
+        server_pub = server.get_public_key_base64()
+        keys_by_users[user_ip] = [server_pub, server._private_key]
+
+        print(f"\nmain.py | ecdh_post() client_pub: {client_pub}\n")
+
+        result = {
+            "key": base64.b64encode(server_pub).decode('utf-8')
+        }
+
+    return result
 
     server = crypto.ECDHKeyExchange() # 4
     server_pub = server.get_public_key_base64() # 5
@@ -107,33 +120,3 @@ def ecdh():
 
 if __name__ == '__main__':
     app.run(host=HOST, port=PORT, debug=True)
-
-
-
-# JS скрипты для запросов через Chrome DevTools
-# btoa(str) - перевод str в b64 в JS
-
-# fetch('http://127.0.0.1:7654/encrypt', {
-#     method: 'POST',
-#     headers: {
-#         'Content-Type': 'application/json'
-#     },
-#     body: JSON.stringify({
-#         content: [btoa("testing bebra"), btoa("asdfasdf"), btoa("2"), btoa("3"), btoa("4"), "0LPQvtC50LTQsA=="]
-#     })
-# })
-# .then(response => response.json())
-# .then(data => console.log(data))
-# .catch(error => console.error(error));
-
-
-# fetch('http://127.0.0.1:7654/decrypt', {
-#     method: 'POST',
-#     headers: {
-#         'Content-Type': 'application/json'
-#     },
-#     body: JSON.stringify({content: '6J87GLgA4jpP3DtPQCX2/+rXctJJUmECYj58Jari+xcDUUMOmrcd+ZnZZ7HmtL7d', hmac: 'YVlgDYFz1CVlDaDGvhP2gqB5IhwfyGbV4iRo5+gwrPQ=', iv: 'oFtTJ+F57vo9nqqhmo3y2Q==', nonce: 'Nf/DN0FGfUM0bDoz'})
-# })
-# .then(response => response.json())
-# .then(data => console.log(data))
-# .catch(error => console.error(error));
