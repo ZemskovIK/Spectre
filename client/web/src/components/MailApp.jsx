@@ -342,7 +342,7 @@ export default function MailApp() {
       const response = await axios.post("http://localhost:5000/api/users", {
         login: userLogin.trim(),
         password: userPassword.trim(),
-        access_level: +userAccessLevel.trim(),
+        access_level: parseInt(userAccessLevel.trim()),
       });
       fetchUsers();
       setUsers([...users, response.data]);
