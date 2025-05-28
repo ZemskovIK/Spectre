@@ -80,7 +80,7 @@ class Aes256CbcHmac:
         nonce = base64.b64decode(data["nonce"])
         tag = base64.b64decode(data["hmac"])
 
-        print(f"\ncrypto.py | decrypt() data: {data}\n")
+        print(f"\ncrypto.py | decrypt() data: {data}, {type(data)}\n")
 
         h = hmac.HMAC(self.hmac_key, hashes.SHA256())
         h.update(iv + ciphertext + nonce)

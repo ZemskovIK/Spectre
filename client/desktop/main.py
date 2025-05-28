@@ -7,6 +7,9 @@ import base64
 import crypto
 import os
 from pyi_resource import resource_path
+from flask import jsonify, Flask
+
+appp = Flask(__name__)
 
 class MilitaryLettersApp:
     def __init__(self, root):
@@ -282,9 +285,18 @@ class MilitaryLettersApp:
             messagebox.showerror("Ошибка", "Все поля должны быть заполнены")
             return
         
+        print(f"main.py | submit_create content: {content}, {type(content)}")
+
         content_bytes = json.dumps(content).encode('utf-8')
+
+        content_bytes = {
+            "content": [base64.b64encode(content_bytes).decode('utf-8')]
+        }
+
+        print(f"main.py | submit_create content_bytes: {content_bytes}, {type(content_bytes)}")
+
         letter_data = encrypt(content_bytes, self.aes_key, self.hmac_key)
-                
+        
         try:
             response = self.make_authenticated_request(
                 "POST", 
@@ -292,6 +304,8 @@ class MilitaryLettersApp:
                 json=letter_data
             )
             response_data = response.json()
+
+
            
             if response.status_code == 200 and response_data.get("error") is None:
                 messagebox.showinfo("Успех", f"Письмо успешно добавлено")
@@ -533,7 +547,7 @@ class MilitaryLettersApp:
         self.update_found_in.delete(0, END)
     
 def decrypt(data, aes_key, hmac_key):
-    print(f"\nmain.py | decrypt() data: {data}\n")
+    print(f"\nmain.py | decrypt() data: {data}, {type(data)}\n")
 
     crypto_box = crypto.Aes256CbcHmac(aes_key, hmac_key)
 
@@ -551,12 +565,12 @@ def decrypt(data, aes_key, hmac_key):
 
 def encrypt(data, aes_key, hmac_key):
     # data = request.get_json()
-    # content = [base64.b64decode(data['content'][0]).decode("utf-8")]
+    content = [base64.b64decode(data['content'][0]).decode("utf-8")]
 
-    # json_str = json.dumps(content)
-    # content = json_str.encode('utf-8')
+    json_str = json.dumps(content)
+    data = json_str.encode('utf-8')
 
-    print(f"\nmain.py | encrypt() data in bytes: {data}\n")
+    print(f"\nmain.py | encrypt() data in bytes: {data}, {type(data)}\n")
     # print(f"\nserver.py | encrypt() content: {content}\n")
 
     crypto_box = crypto.Aes256CbcHmac(aes_key, hmac_key)
@@ -564,7 +578,7 @@ def encrypt(data, aes_key, hmac_key):
 
     encrypted_text = crypto_box.encrypt(data, nonce)
 
-    print(f"\nmain.py | encrypt() encrypted_text: {encrypted_text}\n")
+    print(f"\nmain.py | encrypt() encrypted_text: {encrypted_text}, {type(encrypted_text)}\n")
 
     # data_list = json.loads(encrypted_text.decode('utf-8'))
     # content_base64_list = [base64.b64encode(item.encode('utf-8')).decode('utf-8')
@@ -574,6 +588,12 @@ def encrypt(data, aes_key, hmac_key):
     # }
 
     return json.dumps(encrypted_text)
+
+    with appp.app_context():
+        data = jsonify(encrypted_text)
+
+    print(f"\nmain.py | encrypt() data: {data}, {type(data)}\n")
+    return data
 
 def ecdh_post(client):
     # Создаем ключи для обмена Диффи-Хеллмана и отправляем публичный ключ серверу
