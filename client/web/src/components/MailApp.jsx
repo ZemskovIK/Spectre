@@ -11,6 +11,17 @@ import UsersList from "./UsersList";
 import CreateUserForm from "./CreateUserForm";
 import EditUserForm from "./EditUserForm";
 import SwitchSection from "./SwitchSection";
+import NotificationSection from "./NotificationSection";
+
+import { useMemo } from "react";
+import {
+  RadiusBottomleftOutlined,
+  RadiusBottomrightOutlined,
+  RadiusUpleftOutlined,
+  RadiusUprightOutlined,
+} from "@ant-design/icons";
+import { Button, Divider, notification, Space } from "antd";
+const Context = React.createContext({ name: "Default" });
 
 export default function MailApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -53,13 +64,23 @@ export default function MailApp() {
 
   const { isLetter, setIsLetter } = useState(true);
 
+  const [api, contextHolder] = notification.useNotification();
+  const openNotification = (placement, prop) => {
+    api.info({
+      message: `${prop}`,
+
+      placement,
+    });
+  };
+  const contextValue = useMemo(() => ({ name: "Ant Design" }), []);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       const decoded = jwtDecode(token);
-      setIsAdmin(decoded.role); // Обновляем роль при изменении токена
+      setIsAdmin(decoded.role);
     }
-  }, [isAuthenticated, isAdmin]); // Зависимость от isAuthenticated
+  }, [isAuthenticated, isAdmin]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -224,6 +245,7 @@ export default function MailApp() {
     } finally {
       setMessages(messages.filter((msg) => msg.id !== id));
       setDeletingId(null);
+      openNotification("topRight", "письмо успешно удалено");
     }
   };
 
@@ -240,6 +262,7 @@ export default function MailApp() {
     } finally {
       setUsers(users.filter((msg) => msg.id !== id));
       setDeletingId(null);
+      openNotification("topRight", "пользователь успешно удален");
     }
   };
 
@@ -272,6 +295,7 @@ export default function MailApp() {
       }
     } finally {
       setLoading(false);
+      openNotification("topRight", "письмо успешно отредактировано");
     }
   };
 
@@ -302,6 +326,7 @@ export default function MailApp() {
       }
     } finally {
       setLoading(false);
+      openNotification("topRight", "пользователь успешно отредактирован");
     }
   };
 
@@ -330,6 +355,7 @@ export default function MailApp() {
       }
     } finally {
       setLoading(false);
+      openNotification("topRight", "письмо успешно добавлено");
     }
   };
 
@@ -356,6 +382,7 @@ export default function MailApp() {
       }
     } finally {
       setLoading(false);
+      openNotification("topRight", "пользователь успешно добавлен");
     }
   };
 
@@ -401,6 +428,10 @@ export default function MailApp() {
           Выйти
         </button>
       </div>
+      <Context.Provider value={contextValue}>
+        {contextHolder}
+        <Space></Space>
+      </Context.Provider>
 
       {showContent == "1" ? (
         <div
@@ -416,7 +447,7 @@ export default function MailApp() {
                   <button
                     onClick={HandleChangeShowContentTo1}
                     className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
-                      isEditingUsers
+                      showContent != "1"
                         ? "bg-gray-500 hover:bg-gray-700"
                         : "bg-gray-600 hover:bg-gray-700"
                     }`}
@@ -427,7 +458,7 @@ export default function MailApp() {
                   <button
                     onClick={HandleChangeShowContentTo2}
                     className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
-                      !isEditingUsers
+                      showContent == "1"
                         ? "bg-gray-500 hover:bg-gray-700"
                         : "bg-gray-600 hover:bg-gray-700"
                     }`}
@@ -451,6 +482,7 @@ export default function MailApp() {
             onEmailClick={openMessage}
             onDeleteEmail={deleteMessage}
             deletingId={deletingId}
+            openNotification={openNotification}
           ></EmailList>
         </div>
       ) : (
@@ -465,7 +497,7 @@ export default function MailApp() {
               <button
                 onClick={HandleChangeShowContentTo1}
                 className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
-                  !isEditingUsers
+                  showContent != "1"
                     ? "bg-gray-500 hover:bg-gray-700"
                     : "bg-gray-600 hover:bg-gray-700"
                 }`}
@@ -476,7 +508,7 @@ export default function MailApp() {
               <button
                 onClick={HandleChangeShowContentTo2}
                 className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
-                  isEditingUsers
+                  showContent == "1"
                     ? "bg-gray-500 hover:bg-gray-700"
                     : "bg-gray-600 hover:bg-gray-700"
                 }`}
