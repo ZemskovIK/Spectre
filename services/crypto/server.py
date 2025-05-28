@@ -83,7 +83,7 @@ def decrypt():
 def ecdh():
     global keys_by_user
     data = request.get_json()
-    print(f"\nserver.py | ecdh() data: {data}\n")
+    # print(f"\nserver.py | ecdh() data: {data}\n")
     # json_str = json.dumps(data["content"])
     # print(f"\nserver.py | ecdh() json_str: {json_str}\n")
     if len(data) == 1:
@@ -106,13 +106,13 @@ def ecdh():
         client_public_key =  json.dumps(data["key"])
 
         server = crypto.ECDHKeyExchange()
-        server._private_key = keys_by_user[user_ip][1]
+        server._private_key = keys_by_users[user_ip][1]
 
         server.compute_shared_secret(client_public_key)
 
-        keys_by_user[user_ip] = [server.aes_key, server.hmac_key]
+        keys_by_users[user_ip] = [server.aes_key, server.hmac_key]
 
-        result = None
+        return '', 204
 
     print(f"\nserver.py | ecdh() keys_by_users: {keys_by_users}\n")
 
