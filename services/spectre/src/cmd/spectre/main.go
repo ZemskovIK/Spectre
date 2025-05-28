@@ -32,9 +32,10 @@ func main() {
 	log.Info("init storage")
 
 	// init crypto client
-	crypto := proxy.NewCryptoClient(
+	crypto := proxy.NewCryptoClient( // ! TODO ip!!!
 		"http://127.0.0.1:7654/encrypt",
 		"http://127.0.0.1:7654/decrypt",
+		"http://127.0.0.1:7654/ecdh",
 	)
 
 	// init router

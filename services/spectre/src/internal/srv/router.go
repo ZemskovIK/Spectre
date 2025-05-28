@@ -24,7 +24,7 @@ func NewRouter(s st.Storage, log *logger.Logger, cr *proxy.CryptoClient) *Router
 	mux := http.NewServeMux()
 
 	lettersHL := handlers.NewLettersHandler(s, log, cr)
-	usersHL := handlers.NewUsersHandler(s, log)
+	usersHL := handlers.NewUsersHandler(s, log, cr)
 	authHL := auth.NewAuthHandler(s, log)
 
 	// CORS
@@ -57,6 +57,14 @@ func NewRouter(s st.Storage, log *logger.Logger, cr *proxy.CryptoClient) *Router
 	// users
 	mux.Handle(methods.GET(api.USERS_POINT),
 		http.HandlerFunc(usersHL.GetAll),
+	)
+
+	// ecdh
+	mux.Handle(methods.GET(api.ECDH_POINT),
+		http.HandlerFunc(usersHL.ECDHGetK),
+	)
+	mux.Handle(methods.POST(api.ECDH_POINT),
+		http.HandlerFunc(usersHL.ECDHSetA),
 	)
 
 	// auth

@@ -18,6 +18,10 @@ type Response struct {
 	Nonce string `json:"nonce"`
 }
 
+type ECDHResponse struct {
+	Key string `json:"key"`
+}
+
 // NewResponse creates a new Response object.
 func NewResponse(content interface{}, err interface{}) Response {
 	return Response{
@@ -42,6 +46,14 @@ func JWTOk(w http.ResponseWriter, token string) {
 
 func OkWithResponse(w http.ResponseWriter, r Response) {
 	json.NewEncoder(w).Encode(r)
+}
+
+func OkWithKey(w http.ResponseWriter, r ECDHResponse) {
+	json.NewEncoder(w).Encode(r)
+}
+
+func OkEmpty(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // WriteError sends an error response with a given status and message.

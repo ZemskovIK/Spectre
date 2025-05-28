@@ -5,6 +5,7 @@ import (
 	"spectre/internal/models"
 	"spectre/internal/srv/lib"
 	"spectre/internal/srv/lib/response"
+	"spectre/internal/srv/proxy"
 	"spectre/pkg/logger"
 )
 
@@ -19,16 +20,18 @@ type usersStore interface {
 }
 
 type usersHandler struct {
-	st  usersStore
-	log *logger.Logger
+	crypto *proxy.CryptoClient
+	st     usersStore
+	log    *logger.Logger
 }
 
 func NewUsersHandler(
-	s usersStore, log *logger.Logger,
+	s usersStore, log *logger.Logger, cr *proxy.CryptoClient,
 ) *usersHandler {
 	return &usersHandler{
-		st:  s,
-		log: log,
+		crypto: cr,
+		st:     s,
+		log:    log,
 	}
 }
 
@@ -68,4 +71,27 @@ func (h *usersHandler) GetAll(
 
 	h.log.Debugf("%s: successfully retrieved %d users", loc, len(users))
 	response.Ok(w, users)
+}
+
+func (h *usersHandler) ECDHGetK(
+	w http.ResponseWriter, r *http.Request,
+) {
+	resp, err := h.crypto.GetK(r)
+	if err != nil {
+		// ! TODO
+		return
+	}
+
+	response.OkWithKey(w, resp)
+}
+
+func (h *usersHandler) ECDHSetA(
+	w http.ResponseWriter, r *http.Request,
+) {
+	if err := h.crypto.SetA(r); err != nil {
+		// ! TODO
+		return
+	}
+
+	response.OkEmpty(w)
 }

@@ -5,4 +5,6 @@ const (
 	LETTER_POINT  = "/api/letters/"
 
 	USERS_POINT = "/api/users"
+
+	ECDH_POINT = "/ecdh"
 )
