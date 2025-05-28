@@ -76,9 +76,13 @@ func (h *usersHandler) GetAll(
 func (h *usersHandler) ECDHGetK(
 	w http.ResponseWriter, r *http.Request,
 ) {
+	loc := GLOC_USRS + "ECDHGetK()"
+	h.log.Debugf("%s: handler called", loc)
+
 	resp, err := h.crypto.GetK(r)
 	if err != nil {
-		// ! TODO
+		h.log.Errorf("%s: error when get k from proxy: %v", loc, err)
+		response.ErrCannotECDHGetK(w)
 		return
 	}
 
@@ -88,8 +92,11 @@ func (h *usersHandler) ECDHGetK(
 func (h *usersHandler) ECDHSetA(
 	w http.ResponseWriter, r *http.Request,
 ) {
+	loc := GLOC_USRS + "ECDHSetA()"
+
 	if err := h.crypto.SetA(r); err != nil {
-		// ! TODO
+		h.log.Errorf("%s: error when set a from proxy: %v", loc, err)
+		response.ErrCannotECDHSetA(w)
 		return
 	}
 

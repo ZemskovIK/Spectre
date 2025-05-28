@@ -140,7 +140,7 @@ func (c *CryptoClient) SetA(r *http.Request) error {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusNoContent {
 		return errBadStatusCode(resp.StatusCode)
 	}
 

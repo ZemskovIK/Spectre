@@ -151,3 +151,11 @@ func ErrCannotEncryptData(w http.ResponseWriter) {
 func ErrCannotDecryptData(w http.ResponseWriter) {
 	WriteError(w, http.StatusBadGateway, "cannot decrypt data!")
 }
+
+func ErrCannotECDHGetK(w http.ResponseWriter) {
+	WriteError(w, http.StatusBadGateway, "cannot get key from proxy!")
+}
+
+func ErrCannotECDHSetA(w http.ResponseWriter) {
+	WriteError(w, http.StatusBadGateway, "cannot set a from proxy!")
+}
