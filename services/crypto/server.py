@@ -95,7 +95,7 @@ def ecdh():
         server_pub = server.get_public_key_base64()
         keys_by_users[user_ip] = [server_pub, server._private_key]
 
-        print(f"\nmain.py | ecdh_post() client_pub: {server_pub}\n")
+        print(f"\nserver.py | ecdh()1 server_pub: {server_pub}\n")
 
         result = {
             "key":server_pub
@@ -113,6 +113,8 @@ def ecdh():
         keys_by_user[user_ip] = [server.aes_key, server.hmac_key]
 
         result = None
+
+    print(f"\nserver.py | ecdh() keys_by_users: {keys_by_users}\n")
 
     return result
 
