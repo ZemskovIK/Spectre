@@ -469,6 +469,19 @@ class MilitaryLettersApp:
             messagebox.showerror("Ошибка", "Все поля должны быть заполнены")
             return
         
+        # Я(АЗАМАТ) ТРОГАЛ ЭТУ ЧАСТЬ КОДА!!
+        content_bytes = json.dumps(content).encode('utf-8')
+
+        content_bytes = {
+            "content": [base64.b64encode(content_bytes).decode('utf-8')]
+        }
+
+        print(f"main.py | submit_update() content_bytes: {content_bytes}, {type(content_bytes)}")
+
+        content = encrypt(content_bytes, self.aes_key, self.hmac_key)
+        # Трогал только то, что между этим и верхним комментами.
+        # Что я изменил?? Добавил шифрование в эту функцию <3.
+
         try:
             response = self.make_authenticated_request(
                 "PUT", 
