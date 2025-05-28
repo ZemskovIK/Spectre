@@ -95,26 +95,11 @@ def ecdh():
         server_pub = server.get_public_key_base64()
         keys_by_users[user_ip] = [server_pub, server._private_key]
 
-        print(f"\nmain.py | ecdh_post() client_pub: {client_pub}\n")
+        print(f"\nmain.py | ecdh_post() client_pub: {server_pub}\n")
 
         result = {
             "key": base64.b64encode(server_pub).decode('utf-8')
         }
-
-    return result
-
-    server = crypto.ECDHKeyExchange() # 4
-    server_pub = server.get_public_key_base64() # 5
-
-    server.compute_shared_secret(client_pub) # 7,9
-
-    # Ключи снизу используем для шифрования и проверки целостности
-    aes_key = server.aes_key
-    hmac_key = server.hmac_key
-
-    result = {
-        "content": server_pub
-    }
 
     return result
 
