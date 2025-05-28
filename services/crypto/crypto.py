@@ -18,6 +18,8 @@ class ECDHKeyExchange:
         self._shared_secret = None
         self.aes_key = None
         self.hmac_key = None
+        # keys_by_user = { "ip": [server_private, server_public, client_public, ] }
+        # self.keys_by_user = {}
 
     def get_public_key_base64(self) -> str:
         # Возвращает публичный ключ в base64
@@ -25,7 +27,7 @@ class ECDHKeyExchange:
             encoding=serialization.Encoding.X962,
             format=serialization.PublicFormat.UncompressedPoint
         )
-        return base64.b64encode(public_bytes).decode()
+        return base64.b64encode(public_bytes).decode('utf-8')
 
     def compute_shared_secret(self, other_pub_base64: str):
         # Вычисляет ключи AES + HMAC по общему секрету, вычисляемому из чужого публичного и своего приватного ключей
