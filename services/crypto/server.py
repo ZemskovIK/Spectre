@@ -98,8 +98,21 @@ def ecdh():
         print(f"\nmain.py | ecdh_post() client_pub: {server_pub}\n")
 
         result = {
-            "key": base64.b64encode(server_pub).decode('utf-8')
+            "key":server_pub
         }
+
+    elif len(data) == 2:
+        user_ip = json.dumps(data["from"])
+        client_public_key =  json.dumps(data["key"])
+
+        server = crypto.ECDHKeyExchange()
+        server._private_key = keys_by_user[user_ip][1]
+
+        server.compute_shared_secret(client_public_key)
+
+        keys_by_user[user_ip] = [server.aes_key, server.hmac_key]
+
+        result = None
 
     return result
 
