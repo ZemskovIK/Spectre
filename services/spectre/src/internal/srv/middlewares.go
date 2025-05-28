@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"spectre/internal/srv/api"
 	"spectre/internal/srv/auth"
 	"spectre/internal/srv/lib"
 	"spectre/pkg/logger"
@@ -39,7 +40,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 func AuthMiddleware(logger *logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == auth.LOGIN_POINT {
+			if r.URL.Path == auth.LOGIN_POINT || r.URL.Path == api.ECDH_POINT {
 				next.ServeHTTP(w, r)
 				return
 			}
