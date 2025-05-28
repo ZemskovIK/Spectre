@@ -63,6 +63,14 @@ func WriteError(w http.ResponseWriter, status int, msg string) {
 	json.NewEncoder(w).Encode(r)
 }
 
+func WriteECDHError(w http.ResponseWriter, msg string) {
+	w.WriteHeader(http.StatusBadGateway)
+	r := map[string]string{
+		"error": msg,
+	}
+	json.NewEncoder(w).Encode(r)
+}
+
 // ErrInvalidID sends a 400 error for invalid ID.
 func ErrInvalidID(w http.ResponseWriter, sid string) {
 	WriteError(w, http.StatusBadRequest, "invalid id: "+sid)
@@ -153,9 +161,9 @@ func ErrCannotDecryptData(w http.ResponseWriter) {
 }
 
 func ErrCannotECDHGetK(w http.ResponseWriter) {
-	WriteError(w, http.StatusBadGateway, "cannot get key from proxy!")
+	WriteECDHError(w, "cannot ECDH get K")
 }
 
 func ErrCannotECDHSetA(w http.ResponseWriter) {
-	WriteError(w, http.StatusBadGateway, "cannot set a from proxy!")
+	WriteECDHError(w, "cannot ECDH set A")
 }
