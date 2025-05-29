@@ -7,9 +7,6 @@ import base64
 import crypto
 import os
 from pyi_resource import resource_path
-from flask import jsonify, Flask
-
-appp = Flask(__name__)
 
 class MilitaryLettersApp:
     def __init__(self, root):
@@ -480,7 +477,7 @@ class MilitaryLettersApp:
 
         content = encrypt(content_bytes, self.aes_key, self.hmac_key)
         # Трогал только то, что между этим и верхним комментами.
-        # Что я изменил?? Добавил шифрование в эту функцию <3.
+        # Что я изменил?? Добавил шифрование в эту функцию.
 
         try:
             response = self.make_authenticated_request(
@@ -602,41 +599,22 @@ def encrypt(data, aes_key, hmac_key):
 
     return json.dumps(encrypted_text)
 
-    with appp.app_context():
-        data = jsonify(encrypted_text)
-
-    print(f"\nmain.py | encrypt() data: {data}, {type(data)}\n")
-    return data
-
-def ecdh_post(client):
-    # Создаем ключи для обмена Диффи-Хеллмана и отправляем публичный ключ серверу
-    client = crypto.ECDHKeyExchange() # 4
+def ecdh(server_pub):
+    
+    clinet = crypto.ECDHKeyExchange() # 4
     client_pub = client.get_public_key_base64() # 5
-    print(f"\nmain.py | ecdh_post() client_pub: {client_pub}\n")
+
+    client.compute_shared_secret(server_pub) # 7,9
+
+    # Ключи снизу используем для шифрования и проверки целостности
+    aes_key = clinet.aes_key
+    hmac_key = client.hmac_key
 
     result = {
         "content": client_pub
     }
 
     return result
-
-def ecdh_get(client):
-    # {
-    #     content: ["base64string_server_public_key"]
-    # }
-    data = request.get_json()
-    print(f"\nmain.py | ecdh_get() data: {data}\n")
-
-    server_pub = json.dumps(data["content"])
-    print(f"\nmain.py | ecdh_get() server_pub: {server_pub}\n")
-
-
-    client.compute_shared_secret(server_pub) # 7,9
-
-    # Ключи снизу используем для шифрования и проверки целостности
-    aes_key = client.aes_key
-    hmac_key = client.hmac_key
-
 
 if __name__ == "__main__":
     root = Tk()
