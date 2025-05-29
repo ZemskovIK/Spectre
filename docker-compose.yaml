@@ -2,7 +2,7 @@ services:
   crypto:
     container_name: SpectreCrypto
     build:
-      context: ./crypto
+      context: ./services/crypto
       dockerfile: Dockerfile
     env_file:
       - .env
@@ -17,7 +17,7 @@ services:
   spectre:
     container_name: SpectreBase
     build:
-      context: ./spectre
+      context: ./services/spectre
       dockerfile: Dockerfile
     env_file:
       - .env
@@ -31,6 +31,25 @@ services:
     networks:
       custom_network:
         ipv4_address: 10.12.0.12
+  
+  web_client:
+    container_name: SpectreWebClient
+    build:
+      context: ./client/web
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "${WEBCLIENT_PORT}:${WEBCLIENT_PORT}"
+    command: >
+      sh -c "npm run dev -- --host 0.0.0.0 --port ${WEBCLIENT_PORT}"
+    depends_on:
+      - crypto
+      - spectre
+    restart: always
+    networks:
+      custom_network:
+        ipv4_address: 10.12.0.13
 
 networks:
   custom_network:
