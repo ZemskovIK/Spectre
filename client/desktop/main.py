@@ -30,14 +30,36 @@ class MilitaryLettersApp:
         self.api_url = "http://localhost:5000"
         self.token = None
         self.current_user = None
-        self.aes_key = b'\xb9M\x0b8\x00\x10\x90\x16\xc7\xed\x93\x08\xc1\x00J\xf2\x08\xb0\x01~\xb5_G\x805\xac\x95\xa2t`1\xde'
-        self.hmac_key = b'Dp\xc2\xc6B\x16\xb8\\\xaf_z5\x8dC\x1f3\x19\n\xe1u8\xe1Q:\xd1}\xb2\xa0\xf8$\xa6\x0e'
-        # self.aes_key = None
-        # self.hmac_key = None
+        # self.aes_key = b'\xb9M\x0b8\x00\x10\x90\x16\xc7\xed\x93\x08\xc1\x00J\xf2\x08\xb0\x01~\xb5_G\x805\xac\x95\xa2t`1\xde'
+        # self.hmac_key = b'Dp\xc2\xc6B\x16\xb8\\\xaf_z5\x8dC\x1f3\x19\n\xe1u8\xe1Q:\xd1}\xb2\xa0\xf8$\xa6\x0e'
+        self.aes_key = None
+        self.hmac_key = None
         self.client = None
 
+        self.key_exchange()
         self.show_login_form()    
         
+    def key_exchange(self):
+        response = self.make_authenticated_request(
+            "GET", 
+            f"{self.api_url}/ecdh"
+        )
+        response_data = response.json()
+        print(f"main.py | key_exchange() response(server_key): {response_data}, {type(response_data)}")
+        preresult = ecdh(response_data)
+        # print(f"main.py | key_exchange() result(client_key): {result}, {type(result)}")
+        result = preresult[0]
+        self.aes_key = preresult[1]
+        self.hmac_key = preresult[2]
+        print(f"main.py | key_exchange() hmac_key: {self.hmac_key}, {type(preresult[2])}")
+        response = self.make_authenticated_request(
+            "POST", 
+            f"{self.api_url}/ecdh",
+            json=result
+        )
+
+        print(f"main.py | key_exchange() was done")
+
     def show_login_form(self):
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -599,24 +621,25 @@ def encrypt(data, aes_key, hmac_key):
 
     return json.dumps(encrypted_text)
 
-def ecdh(server_pub):
-
-    clinet = crypto.ECDHKeyExchange() # 4
+def ecdh(data):
+    server_pub = data["key"]
+    client = crypto.ECDHKeyExchange() # 4
     client_pub = client.get_public_key_base64() # 5
 
     client.compute_shared_secret(server_pub) # 7,9
 
     # Ключи снизу используем для шифрования и проверки целостности
-    aes_key = clinet.aes_key
+    aes_key = client.aes_key
     hmac_key = client.hmac_key
-
+    # app.aes_key = client.aes_key
+    # app.hmac_key = client.hmac_key
     result = {
-        "content": client_pub
+        "key": client_pub
     }
 
-    print(f"main.py | ecdh() result: {result}, {type(result)}")
-    
-    return result
+    print(f"\nmain.py | ecdh() aes_key, hmac_key: {aes_key}\n{hmac_key}\n")
+
+    return [result, aes_key, hmac_key]
 
 if __name__ == "__main__":
     root = Tk()

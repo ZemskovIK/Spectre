@@ -46,6 +46,8 @@ class ECDHKeyExchange:
 
         self.aes_key = derived[:32]
         self.hmac_key = derived[32:]
+        print(f"\ncrypto.py | shared_secret() aes_key, hmac_key: {self.aes_key}\n{self.hmac_key}\n")
+
 
 
 

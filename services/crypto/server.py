@@ -51,14 +51,15 @@ def encrypt():
 @app.route('/decrypt', methods=['POST'])
 def decrypt():
     data = request.get_json()
-    user_ip = data["from"]
+    user_ip = data["from"][1:-1]
     # content = base64.b64decode(data['content'])
     print(f"\nserver.py | decrypt() data: {data}, {type(data)}\n")
     # print(content)
     # print(base64.b64decode(data["iv"]))
     # print("\n\n\n\n\n\n")
     data = json.loads(data)
-    crypto_box = crypto.Aes256CbcHmac(server_aes_key, server_hmac_key)
+    crypto_box = crypto.Aes256CbcHmac(keys_by_users[user_ip][0], keys_by_users[user_ip][1])
+    # crypto_box = crypto.Aes256CbcHmac(server_aes_key, server_hmac_key)
 
     decrypted_text = crypto_box.decrypt(data)
     print(f"server.py | decrypt() decrypted_text: {decrypted_text}, {type(decrypted_text)}")
@@ -91,7 +92,7 @@ def ecdh():
     # json_str = json.dumps(data["content"])
     # print(f"\nserver.py | ecdh() json_str: {json_str}\n")
     if len(data) == 1:
-        user_ip = json.dumps(data["from"])
+        user_ip = json.dumps(data["from"])[1:-1]
 
         print(f"\nserver.py | ecdh()1 user_ip: {user_ip}\n")
 
@@ -106,7 +107,7 @@ def ecdh():
         }
 
     elif len(data) == 2:
-        user_ip = json.dumps(data["from"])
+        user_ip = json.dumps(data["from"])[1:-1]
         client_public_key =  json.dumps(data["key"])
         print(f"\nserver.py | ecdh()2 client_public_key: {client_public_key}\n")
         server = crypto.ECDHKeyExchange()
@@ -115,7 +116,7 @@ def ecdh():
         server.compute_shared_secret(client_public_key)
 
         keys_by_users[user_ip] = [server.aes_key, server.hmac_key]
-        print(f"\nmain.py | ecdh() keys_by_users: {keys_by_users}\n")
+        print(f"\nserver.py | ecdh() keys_by_users: {keys_by_users}\n")
         return '', 204
 
     # print(f"\nserver.py | ecdh() keys_by_users: {keys_by_users}\n")
