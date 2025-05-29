@@ -421,7 +421,7 @@ export default function MailApp() {
       <div className="flex justify-end">
         <button
           onClick={handleLogout}
-          className={`bg-red-500 mr-12 ${
+          className={`bg-red-500 mr-12 cursor-pointer ${
             isAdmin != 6 && "mt-6"
           } text-white py-2 px-6 rounded-lg hover:bg-red-600 transition-colors absolute`}
         >
@@ -446,7 +446,7 @@ export default function MailApp() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={HandleChangeShowContentTo1}
-                    className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+                    className={`cursor-pointer py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
                       showContent != "1"
                         ? "bg-gray-500 hover:bg-gray-700"
                         : "bg-gray-600 hover:bg-gray-700"
@@ -457,7 +457,7 @@ export default function MailApp() {
 
                   <button
                     onClick={HandleChangeShowContentTo2}
-                    className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+                    className={`cursor-pointer py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
                       showContent == "1"
                         ? "bg-gray-500 hover:bg-gray-700"
                         : "bg-gray-600 hover:bg-gray-700"
@@ -496,7 +496,7 @@ export default function MailApp() {
             <div className="flex items-center gap-2">
               <button
                 onClick={HandleChangeShowContentTo1}
-                className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+                className={`cursor-pointer py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
                   showContent != "1"
                     ? "bg-gray-500 hover:bg-gray-700"
                     : "bg-gray-600 hover:bg-gray-700"
@@ -507,7 +507,7 @@ export default function MailApp() {
 
               <button
                 onClick={HandleChangeShowContentTo2}
-                className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+                className={`cursor-pointer py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
                   showContent == "1"
                     ? "bg-gray-500 hover:bg-gray-700"
                     : "bg-gray-600 hover:bg-gray-700"
@@ -535,7 +535,7 @@ export default function MailApp() {
             <div className="lg:w-6xl 2xl:w-7xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
               <button
                 onClick={handleChangeModes}
-                className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+                className={`cursor-pointer py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
                   isEditing
                     ? "bg-gray-500 hover:bg-gray-700"
                     : "bg-gray-600 hover:bg-gray-700"
@@ -545,7 +545,7 @@ export default function MailApp() {
               </button>{" "}
               <button
                 onClick={handleChangeModes}
-                className={`py-1 px-1 rounded-lg text-white font-medium text-2xl font-semibold mb-4 ${
+                className={`cursor-pointer py-1 px-1 rounded-lg text-white font-medium text-2xl font-semibold mb-4 ${
                   isEditing
                     ? "bg-gray-600 hover:bg-gray-700"
                     : "bg-gray-500 hover:bg-gray-700"
@@ -579,7 +579,7 @@ export default function MailApp() {
                       !author.trim() ||
                       dataInt.length < 10
                     }
-                    className={`px-6 py-2 rounded-lg text-white font-medium ${
+                    className={`cursor-pointer px-6 py-2 rounded-lg text-white font-medium ${
                       loading ||
                       !newMessage.trim() ||
                       !author.trim() ||
@@ -613,7 +613,7 @@ export default function MailApp() {
 
                   <button
                     type="submit"
-                    className={`px-6 py-2 rounded-lg text-white font-medium ${
+                    className={`cursor-pointer px-6 py-2 rounded-lg text-white font-medium ${
                       loading ||
                       !newEditingMessage.trim() ||
                       !editingAuthor.trim() ||
@@ -635,7 +635,7 @@ export default function MailApp() {
         <div className="lg:w-6xl 2xl:w-7xl mx-auto mt-6 bg-gradient-to-r from-gray-200 via-gray-350 to-gray-400 rounded-lg shadow-md p-6">
           <button
             onClick={() => setIsEditingUsers(false)}
-            className={`py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
+            className={`cursor-pointer py-1 px-1 mr-3 rounded-lg text-white font-medium text-2xl font-semibold ${
               isEditingUsers
                 ? "bg-gray-500 hover:bg-gray-700"
                 : "bg-gray-600 hover:bg-gray-700"
@@ -645,7 +645,7 @@ export default function MailApp() {
           </button>{" "}
           <button
             onClick={() => setIsEditingUsers(true)}
-            className={`py-1 px-1 rounded-lg text-white font-medium text-2xl font-semibold mb-4 ${
+            className={`cursor-pointer py-1 px-1 rounded-lg text-white font-medium text-2xl font-semibold mb-4 ${
               isEditingUsers
                 ? "bg-gray-600 hover:bg-gray-700"
                 : "bg-gray-500 hover:bg-gray-700"
@@ -671,7 +671,7 @@ export default function MailApp() {
 
               <button
                 type="submit"
-                className={`px-6 py-2 rounded-lg text-white font-medium ${
+                className={`cursor-pointer px-6 py-2 rounded-lg text-white font-medium ${
                   loading ||
                   !userLogin.trim() ||
                   !userPassword.trim() ||
@@ -697,7 +697,7 @@ export default function MailApp() {
               ></EditUserForm>
               <button
                 type="submit"
-                className={`px-6 py-2 rounded-lg text-white font-medium ${
+                className={`cursor-pointer px-6 py-2 rounded-lg text-white font-medium ${
                   loading ||
                   !editingUserPassword.trim() ||
                   !editingUserLogin.trim() ||

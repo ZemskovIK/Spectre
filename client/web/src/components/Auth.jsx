@@ -30,15 +30,19 @@ export default function Auth({
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Авторизация</h2>
-        {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+        <h1 className="text-2xl font-bold mb-6 text-center">Авторизация</h1>
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="login"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Логин
             </label>
             <input
+              id="login"
               type="text"
+              aria-label="Логин"
               value={login}
               onChange={(e) => setlogin(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -46,11 +50,16 @@ export default function Auth({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Пароль
             </label>
             <input
+              id="password"
               type="password"
+              aria-label="Пароль"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
