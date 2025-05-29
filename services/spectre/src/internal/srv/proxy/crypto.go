@@ -3,6 +3,7 @@ package proxy
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"spectre/internal/srv/lib/response"
@@ -12,6 +13,11 @@ import (
 const (
 	PROTO = "http://"
 )
+
+type Request struct {
+	response.ResponseWithContent
+	From string `json:"from"`
+}
 
 // CryptoClient provides methods for interacting with an external encryption service.
 type CryptoClient struct {
@@ -35,14 +41,11 @@ func NewCryptoClient(epoint, dpoint, ecdhPoint string) *CryptoClient {
 // Encrypt sends a slice of base64 strings to the external encryption service.
 // Returns a response.Response struct with the result or an error.
 func (c *CryptoClient) Encrypt(b64 []string, from string) (response.ResponseWithContent, error) {
-	type req struct {
-		Content []string `json:"content"`
-		From    string   `json:"from"`
-	}
-
-	reqBody, err := json.Marshal(req{
-		Content: b64,
-		From:    from,
+	reqBody, err := json.Marshal(Request{
+		ResponseWithContent: response.ResponseWithContent{
+			Content: b64,
+		},
+		From: from,
 	})
 	if err != nil {
 		return response.EmptyWithContent, err
@@ -73,34 +76,14 @@ func (c *CryptoClient) Encrypt(b64 []string, from string) (response.ResponseWith
 // Returns a response.Response struct with the result or an error if the request fails or the response is invalid.
 func (c *CryptoClient) Decrypt(r *http.Request) (response.ResponseWithContent, error) {
 
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		// обработка ошибки
+	if err := augmentRequestBody(r); err != nil {
+		return response.EmptyWithContent, err
 	}
-	r.Body.Close() // закрываем старый ридер, чтобы освободить ресурсы
-
-	// распарсим JSON в map
-	var data map[string]interface{}
-	if err := json.Unmarshal(bodyBytes, &data); err != nil {
-		// обработка ошибки
-	}
-
-	// добавляем новое поле
-	data["new_field"] = "new_value"
-
-	// сериализуем обратно в JSON
-	newBodyBytes, err := json.Marshal(data)
-	if err != nil {
-		// обработка ошибки
-	}
-
-	// создаём новый io.Reader из изменённого тела
-	newBodyReader := bytes.NewReader(newBodyBytes)
 
 	resp, err := c.Client.Post(
 		PROTO+c.DecryptEndpoint,
 		"application/json",
-		newBodyReader,
+		r.Body,
 	)
 	if err != nil {
 		return response.EmptyWithContent, err
@@ -180,6 +163,38 @@ func (c *CryptoClient) SetA(r *http.Request) error {
 	if resp.StatusCode != http.StatusNoContent {
 		return errBadStatusCode(resp.StatusCode)
 	}
+
+	return nil
+}
+
+func augmentRequestBody(r *http.Request) error {
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+	r.Body.Close()
+
+	var rawJsonString string
+	if err := json.Unmarshal(bodyBytes, &rawJsonString); err != nil {
+		return fmt.Errorf("не удалось распарсить как JSON-строку: %w", err)
+	}
+
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(rawJsonString), &data); err != nil {
+		return fmt.Errorf("не удалось распарсить вложенный JSON: %w", err)
+	}
+
+	data["from"] = r.Host
+
+	newBody, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	r.Body = io.NopCloser(bytes.NewReader(newBody))
+	r.ContentLength = int64(len(newBody))
+
+	fmt.Println("Updated JSON:")
+	fmt.Println(string(newBody))
 
 	return nil
 }

@@ -51,13 +51,13 @@ def encrypt():
 @app.route('/decrypt', methods=['POST'])
 def decrypt():
     data = request.get_json()
-    user_ip = data["from"][1:-1]
+    user_ip = data["from"]
     # content = base64.b64decode(data['content'])
     print(f"\nserver.py | decrypt() data: {data}, {type(data)}\n")
     # print(content)
     # print(base64.b64decode(data["iv"]))
     # print("\n\n\n\n\n\n")
-    data = json.loads(data)
+    # data = json.loads(data)
     crypto_box = crypto.Aes256CbcHmac(keys_by_users[user_ip][0], keys_by_users[user_ip][1])
     # crypto_box = crypto.Aes256CbcHmac(server_aes_key, server_hmac_key)
 

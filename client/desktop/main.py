@@ -496,7 +496,7 @@ class MilitaryLettersApp:
         }
 
         print(f"main.py | submit_update() content_bytes: {content_bytes}, {type(content_bytes)}")
-
+        
         content = encrypt(content_bytes, self.aes_key, self.hmac_key)
         # Трогал только то, что между этим и верхним комментами.
         # Что я изменил?? Добавил шифрование в эту функцию.
