@@ -1,5 +1,6 @@
-from  tkinter import *
+from tkinter import *
 from tkinter import ttk, messagebox, PhotoImage
+from PIL import Image, ImageTk
 import requests
 import jwt
 import os
@@ -20,9 +21,30 @@ class MilitaryLettersApp:
         self.root.iconphoto(True, self.img)
         
         self.style = ttk.Style()
-        self.style.configure('TLabel', font=('Arial', 10))
-        self.style.configure('TButton', font=('Arial', 10))
-        self.style.configure('Header.TLabel', font=('Arial', 12, 'bold'))
+        self.style.theme_use('clam')
+        
+        bg_color = "#f0f0f0"
+        accent_color = "#2c3e50"
+        button_color = "#3498db"
+        
+        self.style.configure('.', background=bg_color, font=('Arial', 10))
+        self.style.configure('TFrame', background=bg_color)
+        self.style.configure('TLabel', background=bg_color, font=('Arial', 10))
+        self.style.configure('Header.TLabel', font=('Arial', 12, 'bold'), foreground=accent_color)
+        self.style.configure('TButton', font=('Arial', 10, 'bold'), background=button_color, 
+                            foreground='white', borderwidth=1)
+        self.style.map('TButton', 
+                    background=[('active', '#2980b9'), ('pressed', '#1a5276')],
+                    foreground=[('active', 'white'), ('pressed', 'white')])
+        self.style.configure('TEntry', fieldbackground='white', borderwidth=1, padding=5)
+        self.style.configure('Card.TFrame', 
+                   background='#f0f0f0',
+                   relief=RAISED,
+                   borderwidth=2)
+        self.style.configure('Hover.TFrame',
+                   background='#f0f0f0',
+                   relief=SOLID,
+                   borderwidth=2)
         
         self.api_url = "http://localhost:5000"
         self.token = None
@@ -34,19 +56,36 @@ class MilitaryLettersApp:
         for widget in self.root.winfo_children():
             widget.destroy()
         
-        login_frame = ttk.Frame(self.root, padding="20")
-        login_frame.pack(fill=BOTH, expand=True)
+        main_frame = ttk.Frame(self.root)
+        main_frame.pack(fill=BOTH, expand=True)
         
-        ttk.Label(login_frame, text="Логин:", style='Header.TLabel').grid(row=0, column=0, pady=5, sticky=W)
-        self.login_entry = ttk.Entry(login_frame, width=30)
-        self.login_entry.grid(row=0, column=1, pady=5, padx=5)
+        login_frame = ttk.Frame(main_frame, padding=(30, 20, 30, 30), 
+                            relief='raised', borderwidth=2)
+        login_frame.place(relx=0.5, rely=0.5, anchor=CENTER)
         
-        ttk.Label(login_frame, text="Пароль:", style='Header.TLabel').grid(row=1, column=0, pady=5, sticky=W)
-        self.password_entry = ttk.Entry(login_frame, width=30, show="*")
-        self.password_entry.grid(row=1, column=1, pady=5, padx=5)
+        header = ttk.Label(login_frame, text="Авторизация", 
+                        style='Header.TLabel', font=('Arial', 14, 'bold'))
+        header.grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky='ew')
         
-        login_btn = ttk.Button(login_frame, text="Войти", command=self.perform_login)
-        login_btn.grid(row=2, column=1, pady=10, sticky=E)
+        ttk.Label(login_frame, text="Логин:", style='Header.TLabel').grid(
+            row=1, column=0, pady=5, sticky=W)
+        self.login_entry = ttk.Entry(login_frame, width=25, font=('Arial', 11))
+        self.login_entry.grid(row=1, column=1, pady=5, padx=10)
+        
+        ttk.Label(login_frame, text="Пароль:", style='Header.TLabel').grid(
+            row=2, column=0, pady=5, sticky=W)
+        self.password_entry = ttk.Entry(login_frame, width=25, show="*", font=('Arial', 11))
+        self.password_entry.grid(row=2, column=1, pady=5, padx=10)
+        
+        login_btn = ttk.Button(login_frame, text="Войти", command=self.perform_login,
+                            style='TButton', width=15)
+        login_btn.grid(row=3, column=1, pady=(15, 5), sticky=E)
+        
+        version_label = ttk.Label(main_frame, text="Версия 3.1", 
+                                foreground='gray', font=('Arial', 8))
+        version_label.place(relx=1.0, rely=1.0, anchor='se', x=-10, y=-10)
+        
+        self.login_entry.focus_set()
     
     def perform_login(self):
         login = self.login_entry.get()
@@ -96,7 +135,7 @@ class MilitaryLettersApp:
                     error_msg = f"Ошибка декодирования токена: {str(e)}"
                     self.user_role = 1
                     
-                self.show_main_interface()
+                self.show_main_menu()
             else:
                 error_msg = response.json().get("message", "Неверный логин или пароль")
                 messagebox.showerror("Ошибка", error_msg)
@@ -108,23 +147,144 @@ class MilitaryLettersApp:
             error_msg = f"Неожиданная ошибка: {str(e)}"
             messagebox.showerror("Ошибка", error_msg)
     
-    def show_main_interface(self):
+    def show_main_menu(self):
         for widget in self.root.winfo_children():
             widget.destroy()
         
-        self.create_widgets()
+        self.create_main_menu()
+        
+    def create_main_menu(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        
+        self.main_frame = ttk.Frame(self.root, style='TFrame')
+        self.main_frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+        
+        self.header_frame = ttk.Frame(self.main_frame, style='TFrame')
+        self.header_frame.pack(fill=X, pady=(0, 20))
+        
+        ttk.Label(self.header_frame, 
+                text="Главное меню", 
+                style='Header.TLabel', 
+                font=('Arial', 14, 'bold')).pack(side=LEFT)
+        
+        user_frame = ttk.Frame(self.header_frame, style='TFrame')
+        user_frame.pack(side=RIGHT)
+        
+        if self.current_user:
+            ttk.Label(user_frame, 
+                    text=f"Пользователь: {self.current_user}", 
+                    font=('Arial', 10)).pack(side=LEFT, padx=5)
+        
+        logout_btn = ttk.Button(user_frame, 
+                            text="Выйти", 
+                            command=self.logout,
+                            style='TButton')
+        logout_btn.pack(side=RIGHT)
+        
+        cards_container = ttk.Frame(self.main_frame, style='TFrame')
+        cards_container.pack(fill=BOTH, expand=True)
+        
+        letters_frame = ttk.Frame(cards_container, 
+                                style='Card.TFrame',
+                                padding=20,
+                                width=300,
+                                relief=RAISED,
+                                borderwidth=2)
+        letters_frame.pack(side=LEFT, fill=BOTH, expand=True, padx=10, ipady=10)
+        
+        users_frame = ttk.Frame(cards_container, 
+                            style='Card.TFrame',
+                            padding=20,
+                            width=300,
+                            relief=RAISED,
+                            borderwidth=2)
+        
+        self._create_menu_card(
+            letters_frame,
+            "Работа с письмами",
+            "Просмотр, добавление и редактирование писем",
+            self.show_letters_interface,
+            "letters"
+        )
         
         if self.user_role == 6:
-            self.tab_control.select(self.users_tab)    
+            users_frame.pack(side=RIGHT, fill=BOTH, expand=True, padx=10, ipady=10)
+            self._create_menu_card(
+                users_frame,
+                "Управление пользователями",
+                "Создание и управление учетными записями",
+                self.show_users_interface,
+                "users"
+            )
 
-    def create_widgets(self):
-        self.main_frame = ttk.Frame(self.root)
-        self.main_frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+    def _create_menu_card(self, parent, title, description, command, icon_type=None):        
+        if icon_type == "letters":
+            icon_path = "letters_icon.png"
+        else:
+            icon_path = "users_icon.png"
+        
+        try:
+            img = Image.open(icon_path)
+            img = img.resize((64, 64), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            
+            if not hasattr(self, 'menu_card_images'):
+                self.menu_card_images = []
+            self.menu_card_images.append(photo)
+            
+            icon_label = Label(parent, image=photo, bg='white')
+            icon_label.image = photo
+            icon_label.pack(pady=(10, 15))
+            
+        except Exception as e:
+            print(f"Ошибка загрузки иконки: {e}")
+            icon_label = Label(parent, 
+                            text=icon_path, 
+                            font=('Arial', 36),
+                            bg='white')
+            icon_label.pack(pady=(10, 15))
+        
+        ttk.Label(parent, 
+                text=title, 
+                style='Header.TLabel',
+                font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        
+        ttk.Label(parent, 
+                text=description, 
+                font=('Arial', 9),
+                wraplength=250).pack(pady=(0, 15))
+        
+        btn = ttk.Button(parent,
+                        text="Перейти",
+                        command=command,
+                        style='TButton',
+                        width=15)
+        btn.pack()
+        
+        def on_enter(e):
+            parent.config(relief=SOLID, style='Hover.TFrame')
+        
+        def on_leave(e):
+            parent.config(relief=RAISED, style='Card.TFrame')
+        
+        parent.bind("<Enter>", on_enter)
+        parent.bind("<Leave>", on_leave)
+        for child in parent.winfo_children():
+            child.bind("<Enter>", lambda e: on_enter(None))
+            child.bind("<Leave>", lambda e: on_leave(None))
+    
+    def show_letters_interface(self):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
         
         self.header_frame = ttk.Frame(self.main_frame)
         self.header_frame.pack(fill=X, pady=[0, 10])
         
-        ttk.Label(self.header_frame, text="Архив", style='Header.TLabel').pack(side=LEFT)
+        ttk.Label(self.header_frame, text="Работа с письмами", style='Header.TLabel').pack(side=LEFT)
+        
+        back_btn = ttk.Button(self.header_frame, text="Назад", command=self.show_main_menu)
+        back_btn.pack(side=RIGHT, padx=5)
         
         user_frame = ttk.Frame(self.header_frame)
         user_frame.pack(side=RIGHT)
@@ -154,15 +314,39 @@ class MilitaryLettersApp:
             self.delete_tab = ttk.Frame(self.tab_control)
             self.tab_control.add(self.delete_tab, text='Удалить письмо')
             self.create_delete_tab()
-            
-            self.users_tab = ttk.Frame(self.tab_control)
-            self.tab_control.add(self.users_tab, text='Управление пользователями')
-            self.create_users_tab()
-            
-            self.create_user_tab = ttk.Frame(self.tab_control)
-            self.tab_control.add(self.create_user_tab, text='Создать пользователя')
-            self.create_add_user_tab()
+    
+    def show_users_interface(self):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
         
+        self.header_frame = ttk.Frame(self.main_frame)
+        self.header_frame.pack(fill=X, pady=[0, 10])
+        
+        ttk.Label(self.header_frame, text="Управление пользователями", style='Header.TLabel').pack(side=LEFT)
+        
+        back_btn = ttk.Button(self.header_frame, text="Назад", command=self.show_main_menu)
+        back_btn.pack(side=RIGHT, padx=5)
+        
+        user_frame = ttk.Frame(self.header_frame)
+        user_frame.pack(side=RIGHT)
+        
+        if self.current_user:
+            ttk.Label(user_frame, text=self.current_user).pack(side=LEFT, padx=5)
+        
+        logout_btn = ttk.Button(user_frame, text="Выйти", command=self.logout)
+        logout_btn.pack(side=RIGHT)
+        
+        self.tab_control = ttk.Notebook(self.main_frame)
+        self.tab_control.pack(fill=BOTH, expand=True)
+        
+        self.users_tab = ttk.Frame(self.tab_control)
+        self.tab_control.add(self.users_tab, text='Поиск пользователей')
+        self.create_users_tab()
+        
+        self.create_user_tab = ttk.Frame(self.tab_control)
+        self.tab_control.add(self.create_user_tab, text='Создать пользователя')
+        self.create_add_user_tab()
+    
     def logout(self):
         self.token = None
         self.show_login_form()
@@ -187,7 +371,7 @@ class MilitaryLettersApp:
     
     def create_add_tab(self):
         frame = ttk.Frame(self.create_tab)
-        frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+        frame.pack(padx=10, pady=10)
         
         ttk.Label(frame, text="Автор:").grid(row=0, column=0, sticky=W, pady=5)
         self.create_author = ttk.Entry(frame, width=50)
@@ -210,7 +394,7 @@ class MilitaryLettersApp:
     
     def create_read_tab(self):
         frame = ttk.Frame(self.read_tab)
-        frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+        frame.pack(padx=10, pady=10)
         
         ttk.Label(frame, text="ID письма или автора:").grid(row=0, column=0, sticky=W, pady=5)
         self.read_query = ttk.Entry(frame, width=50)
@@ -229,7 +413,7 @@ class MilitaryLettersApp:
     
     def create_update_tab(self):
         frame = ttk.Frame(self.update_tab)
-        frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+        frame.pack(padx=10, pady=10)
         
         ttk.Label(frame, text="ID письма для обновления:").grid(row=0, column=0, sticky=W, pady=5)
         self.update_id = ttk.Entry(frame, width=50)
@@ -259,7 +443,7 @@ class MilitaryLettersApp:
     
     def create_delete_tab(self):
         frame = ttk.Frame(self.delete_tab)
-        frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+        frame.pack(padx=10, pady=10)
         
         ttk.Label(frame, text="ID письма для удаления:").grid(row=0, column=0, sticky=W, pady=5)
         self.delete_id = ttk.Entry(frame, width=50)
@@ -540,7 +724,7 @@ class MilitaryLettersApp:
     
     def create_users_tab(self):
         frame = ttk.Frame(self.users_tab)
-        frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+        frame.pack(padx=10, pady=10)
         
         ttk.Label(frame, text="ID пользователя:").grid(row=0, column=0, sticky=W, pady=5)
         self.user_id_entry = ttk.Entry(frame, width=30)
@@ -559,7 +743,7 @@ class MilitaryLettersApp:
         
     def create_add_user_tab(self):
         frame = ttk.Frame(self.create_user_tab)
-        frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
+        frame.pack(padx=10, pady=10)
         
         ttk.Label(frame, text="Логин:").grid(row=0, column=0, sticky=W, pady=5)
         self.new_user_login = ttk.Entry(frame, width=30)
