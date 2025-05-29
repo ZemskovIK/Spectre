@@ -1,7 +1,7 @@
 # 📜 Архив военных писем - Клиентское приложение
 
 <div align="center">
-  <img src="https://github.com/ZemskovIK/Spectre/blob/63d8776837d40195fdbace67dd7d4310e5f5046a/client/desktop/client.png" width="50%" />
+  <img src="https://github.com/ZemskovIK/Spectre/blob/042e24fea4e37803e362f7a948158f5fbd51d86f/client/desktop/client.png" width="50%" />
 </div>
 
 ## 🌿 Ветки проекта
