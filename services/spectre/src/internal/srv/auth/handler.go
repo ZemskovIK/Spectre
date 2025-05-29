@@ -61,8 +61,8 @@ func (h *authHandler) Login(
 		[]byte(creds.Password),
 	); err != nil {
 		h.log.Warnf("%s: invalid password for user: %s", loc, creds.Login)
-		// response.ErrCannotSignIn(w) // ! WARN
-		// return
+		response.ErrCannotSignIn(w) // ! WARN
+		return
 	}
 
 	h.log.Infof("%s: user %s authenticated, generating JWT", loc, creds.Login)

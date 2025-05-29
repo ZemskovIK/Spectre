@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"spectre/internal/models"
 	"spectre/internal/srv/api"
@@ -10,6 +11,8 @@ import (
 	st "spectre/internal/storage"
 	"spectre/pkg/logger"
 	"strconv"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 const GLOC_USRS = "src/internal/api/handlers/users.go/" // for logging
@@ -174,8 +177,6 @@ func (h *usersHandler) Add(
 		response.ErrInvalidRequest(w, "invalid JSON")
 		return
 	}
-	usr.PHash = []byte(usr.Password) // ! TODO
-	h.log.Debugf("%s: decoded usr: %+v", loc, usr)
 
 	if usr.Login == "" {
 		response.ErrInvalidRequest(w, "login cannot be empty!")
@@ -190,7 +191,12 @@ func (h *usersHandler) Add(
 		return
 	}
 
-	// ! TODO : hash pass
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Fatal(err)
+	}
+	usr.PHash = hashedPassword
+	h.log.Debugf("%s: decoded usr: %+v", loc, usr)
 
 	if err := h.st.SaveUser(usr.User); err != nil {
 		response.ErrCannotSave(w)
@@ -235,9 +241,7 @@ func (h *usersHandler) Update(
 		return
 	}
 	usr.ID = id
-	usr.PHash = []byte(usr.Password)
 
-	// ! TODO validation func
 	if usr.Login == "" {
 		response.ErrInvalidRequest(w, "login cannot be empty!")
 		return
@@ -250,6 +254,13 @@ func (h *usersHandler) Update(
 		response.ErrInvalidRequest(w, "invalid access_level "+strconv.Itoa(usr.AccessLevel))
 		return
 	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Fatal(err)
+	}
+	usr.PHash = hashedPassword
+	h.log.Debugf("%s: decoded usr: %+v", loc, usr)
 
 	if err := h.st.UpdateUser(usr.User); err != nil {
 		if err.Error() == st.ErrLetterNotFound(id).Error() {
