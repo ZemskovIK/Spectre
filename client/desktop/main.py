@@ -7,6 +7,7 @@ import base64
 import crypto
 import os
 from pyi_resource import resource_path
+from PIL import Image, ImageTk
 
 class MilitaryLettersApp:
     def __init__(self, root):
