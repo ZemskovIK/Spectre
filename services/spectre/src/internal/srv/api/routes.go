@@ -1,5 +1,7 @@
 package api
 
+import "spectre/pkg/config"
+
 const (
 	LETTERS_POINT = "/api/letters"
 	LETTER_POINT  = "/api/letters/"
@@ -8,3 +10,7 @@ const (
 
 	ECDH_POINT = "/ecdh"
 )
+
+func SetRoutes(cfg *config.RoutesCfg) {
+
+}

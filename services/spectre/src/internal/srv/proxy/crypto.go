@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+const (
+	PROTO = "http://"
+)
+
 // CryptoClient provides methods for interacting with an external encryption service.
 type CryptoClient struct {
 	EncryptEndpoint string // URL of the encryption endpoint
@@ -38,7 +42,7 @@ func (c *CryptoClient) Encrypt(b64 []string) (response.ResponseWithContent, erro
 	}
 
 	resp, err := c.Client.Post(
-		c.EncryptEndpoint,
+		PROTO+c.EncryptEndpoint,
 		"application/json",
 		bytes.NewReader(reqBody),
 	)
@@ -62,7 +66,7 @@ func (c *CryptoClient) Encrypt(b64 []string) (response.ResponseWithContent, erro
 // Returns a response.Response struct with the result or an error if the request fails or the response is invalid.
 func (c *CryptoClient) Decrypt(r *http.Request) (response.ResponseWithContent, error) {
 	resp, err := c.Client.Post(
-		c.DecryptEndpoint,
+		PROTO+c.DecryptEndpoint,
 		"application/json",
 		r.Body,
 	)
@@ -92,7 +96,7 @@ func (c *CryptoClient) GetK(r *http.Request) (response.ECDHResponse, error) {
 	}
 
 	resp, err := c.Client.Post(
-		c.ECDHEndpoint,
+		PROTO+c.ECDHEndpoint,
 		"application/json",
 		bytes.NewBuffer(jsonData),
 	)
@@ -132,7 +136,7 @@ func (c *CryptoClient) SetA(r *http.Request) error {
 	}
 
 	resp, err := c.Client.Post(
-		c.ECDHEndpoint,
+		PROTO+c.ECDHEndpoint,
 		"application/json",
 		bytes.NewBuffer(jsonData),
 	)

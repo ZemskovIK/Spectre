@@ -7,12 +7,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	server "spectre/internal/srv"
 	"spectre/internal/srv/proxy"
 	"spectre/internal/storage/sqlite"
+	"spectre/pkg/config"
 	"spectre/pkg/logger"
 	"syscall"
 	"time"
@@ -27,7 +29,9 @@ func main() {
 	// init logger
 	log := logger.New(logLevel)
 
-	// init config (?)
+	// init config
+	cfg := config.MustLoad()
+	fmt.Println(cfg)
 
 	// init storage
 	st, err := sqlite.NewStorage(dbPath, log)
@@ -37,12 +41,16 @@ func main() {
 	log.Info("init storage")
 
 	// init crypto client
+	cryptoADDR := fmt.Sprintf("%s:%s", cfg.Server.ProxyHost, cfg.Server.ProxyPort)
 	crypto := proxy.NewCryptoClient( // ! TODO ip!!!
-		"http://127.0.0.1:7654/encrypt",
-		"http://127.0.0.1:7654/decrypt",
-		"http://127.0.0.1:7654/ecdh",
+		cryptoADDR+cfg.Routes.ProxyEncryptPoing,
+		cryptoADDR+cfg.Routes.ProxyDecryptPoing,
+		cryptoADDR+cfg.Routes.ProxyECDHPoing,
+	// "http://127.0.0.1:7654/encrypt",
+	// "http://127.0.0.1:7654/decrypt",
+	// "http://127.0.0.1:7654/ecdh",
 	)
-	log.Info("init proxy")
+	log.Infof("ready proxy at %s", cryptoADDR)
 
 	// init router
 	r := server.NewRouter(st, log, crypto)
@@ -52,17 +60,19 @@ func main() {
 	log.Info("init router")
 
 	// init server
+	srvADDR := fmt.Sprintf("%s:%s", cfg.Server.SpectreHost, cfg.Server.SpectrePort)
 	srv := &http.Server{
-		Addr:    ":5000",
+		Addr: srvADDR,
+		// Addr:    ":5000",
 		Handler: r,
 	}
 	log.Info("init server")
 
 	// run
 	go func() {
-		log.Info("running server")
+		log.Infof("running server on %s", srvADDR)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("cannot run server on :5000 : %v", err)
+			log.Fatalf("cannot run server on :%s : %v", err, srvADDR)
 		}
 	}()
 
