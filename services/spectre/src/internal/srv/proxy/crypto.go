@@ -73,27 +73,34 @@ func (c *CryptoClient) Encrypt(b64 []string, from string) (response.ResponseWith
 // Returns a response.Response struct with the result or an error if the request fails or the response is invalid.
 func (c *CryptoClient) Decrypt(r *http.Request) (response.ResponseWithContent, error) {
 
-	var originalData map[string]interface{}
-
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		return response.EmptyWithContent, err
+		// обработка ошибки
 	}
-	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-	if err := json.Unmarshal(bodyBytes, &originalData); err != nil {
-		return response.EmptyWithContent, err
-	}
-	originalData["from"] = r.Host
+	r.Body.Close() // закрываем старый ридер, чтобы освободить ресурсы
 
-	modifiedBody, err := json.Marshal(originalData)
-	if err != nil {
-		return response.EmptyWithContent, err
+	// распарсим JSON в map
+	var data map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &data); err != nil {
+		// обработка ошибки
 	}
+
+	// добавляем новое поле
+	data["new_field"] = "new_value"
+
+	// сериализуем обратно в JSON
+	newBodyBytes, err := json.Marshal(data)
+	if err != nil {
+		// обработка ошибки
+	}
+
+	// создаём новый io.Reader из изменённого тела
+	newBodyReader := bytes.NewReader(newBodyBytes)
 
 	resp, err := c.Client.Post(
 		PROTO+c.DecryptEndpoint,
 		"application/json",
-		bytes.NewBuffer(modifiedBody),
+		newBodyReader,
 	)
 	if err != nil {
 		return response.EmptyWithContent, err
@@ -115,6 +122,7 @@ func (c *CryptoClient) GetK(r *http.Request) (response.ECDHResponse, error) {
 	data := map[string]string{
 		"from": r.Host,
 	}
+
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return response.EmptyEDCH, err

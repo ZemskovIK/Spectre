@@ -68,7 +68,6 @@ func (h *lettersHandler) GetAll(
 
 	h.log.Debugf("%s: found %d letters for access level %d", loc, len(letters), usrAccess)
 
-	// ! TODO : encrypt
 	b64, err := lib.ToBase64Slice(letters)
 	if err != nil {
 		h.log.Errorf("%s: cannot convert to b64: %v", loc, err)
