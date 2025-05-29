@@ -1,18 +1,12 @@
 package handlers
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
 	"spectre/internal/models"
-	"spectre/internal/srv/api"
 	"spectre/internal/srv/lib"
 	"spectre/internal/srv/lib/response"
-	st "spectre/internal/storage"
+	"spectre/internal/srv/proxy"
 	"spectre/pkg/logger"
-	"strconv"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 const GLOC_USRS = "src/internal/api/handlers/users.go/" // for logging
@@ -27,16 +21,18 @@ type usersStore interface {
 }
 
 type usersHandler struct {
-	st  usersStore
-	log *logger.Logger
+	crypto *proxy.CryptoClient
+	st     usersStore
+	log    *logger.Logger
 }
 
 func NewUsersHandler(
-	s usersStore, log *logger.Logger,
+	s usersStore, log *logger.Logger, cr *proxy.CryptoClient,
 ) *usersHandler {
 	return &usersHandler{
-		st:  s,
-		log: log,
+		crypto: cr,
+		st:     s,
+		log:    log,
 	}
 }
 
@@ -55,7 +51,6 @@ func (h *usersHandler) GetAll(
 		response.ErrCannotRetrieveUsers(w)
 		return
 	}
-
 	if usrAccess < lib.ADMIN_ALEVEL {
 		h.log.Warnf("%s: blocked to get users, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
 		response.ErrBlockedToGet(w, usrAccess, lib.ADMIN_ALEVEL)
@@ -71,207 +66,41 @@ func (h *usersHandler) GetAll(
 
 	if len(users) == 0 {
 		h.log.Warnf("%s: no users found", loc)
-		response.Ok(w, []interface{}{})
+		response.OkWithContent(w, []interface{}{})
 		return
 	}
 
 	h.log.Debugf("%s: successfully retrieved %d users", loc, len(users))
-	response.Ok(w, users)
+	response.OkWithContent(w, users)
 }
 
-func (h *usersHandler) GetOne(
+func (h *usersHandler) ECDHGetK(
 	w http.ResponseWriter, r *http.Request,
 ) {
-	loc := GLOC_USRS + "GetOne()"
+	loc := GLOC_USRS + "ECDHGetK()"
+	h.log.Debugf("%s: handler called", loc)
 
-	// ! TODO : copy-paste
-	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
-	if !ok {
-		h.log.Errorf("%s: failed to fetch access level from context", loc)
-		response.ErrCannotRetrieveUsers(w)
-		return
-	}
-	if usrAccess < lib.ADMIN_ALEVEL {
-		h.log.Warnf("%s: blocked to get users, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
-		response.ErrBlockedToGet(w, usrAccess, lib.ADMIN_ALEVEL)
-		return
-	}
-
-	sid, id, err := lib.GetID(api.USER_POINT, r.RequestURI)
+	resp, err := h.crypto.GetK(r)
 	if err != nil {
-		h.log.Errorf("%s: invalid id '%s' in URI '%s': %v", loc, sid, r.RequestURI, err)
-		response.ErrInvalidID(w, sid)
+		h.log.Errorf("%s: error when get k from proxy: %v", loc, err)
+		response.ErrCannotECDHGetK(w)
 		return
 	}
 
-	user, err := h.st.GetUserByID(id)
-	if err != nil {
-		response.ErrCannotGetWithID(w, sid)
-		return
-	}
-
-	// ! TODO : encrypt
-
-	response.Ok(w, user)
+	response.OkWithECDHKey(w, resp)
 }
 
-func (h *usersHandler) Delete(
+func (h *usersHandler) ECDHSetA(
 	w http.ResponseWriter, r *http.Request,
 ) {
-	loc := GLOC_USRS + "Delete()"
+	loc := GLOC_USRS + "ECDHSetA()"
+	h.log.Debugf("%s: handler called", loc)
 
-	// ! TODO : copy-paste
-	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
-	if !ok {
-		h.log.Errorf("%s: failed to fetch access level from context", loc)
-		response.ErrCannotRetrieveUsers(w)
-		return
-	}
-	if usrAccess < lib.ADMIN_ALEVEL {
-		h.log.Warnf("%s: blocked to get users, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
-		response.ErrBlockedToGet(w, usrAccess, lib.ADMIN_ALEVEL)
+	if err := h.crypto.SetA(r); err != nil {
+		h.log.Errorf("%s: error when set a from proxy: %v", loc, err)
+		response.ErrCannotECDHSetA(w)
 		return
 	}
 
-	sid, id, err := lib.GetID(api.USER_POINT, r.RequestURI)
-	if err != nil {
-		h.log.Errorf("%s: invalid id '%s' in URI '%s': %v", loc, sid, r.RequestURI, err)
-		response.ErrInvalidID(w, sid)
-		return
-	}
-
-	if err := h.st.DeleteUser(id); err != nil {
-		response.ErrCannotDeleteWithID(w, sid)
-		return
-	}
-
-	// ! TODO : encrypt
-
-	response.Ok(w, nil)
-}
-
-func (h *usersHandler) Add(
-	w http.ResponseWriter, r *http.Request,
-) {
-	loc := GLOC_USRS + "Add()"
-
-	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
-	if !ok {
-		h.log.Errorf("%s: failed to fetch access level from context", loc)
-		response.ErrCannotRetrieveUsers(w)
-		return
-	}
-	if usrAccess < lib.ADMIN_ALEVEL {
-		h.log.Warnf("%s: blocked to get users, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
-		response.ErrBlockedToGet(w, usrAccess, lib.ADMIN_ALEVEL)
-		return
-	}
-
-	type user struct {
-		models.User
-		Password string `json:"password"`
-	}
-	var usr user
-	if err := json.NewDecoder(r.Body).Decode(&usr); err != nil {
-		h.log.Errorf("%s: failed to decode JSON body: %v", loc, err)
-		response.ErrInvalidRequest(w, "invalid JSON")
-		return
-	}
-
-	if usr.Login == "" {
-		response.ErrInvalidRequest(w, "login cannot be empty!")
-		return
-	}
-	if usr.Password == "" {
-		response.ErrInvalidRequest(w, "password cannot be empty!")
-		return
-	}
-	if usr.AccessLevel < 1 || usrAccess > lib.ADMIN_ALEVEL {
-		response.ErrInvalidRequest(w, "invalid access_level "+strconv.Itoa(usr.AccessLevel))
-		return
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Fatal(err)
-	}
-	usr.PHash = hashedPassword
-	h.log.Debugf("%s: decoded usr: %+v", loc, usr)
-
-	if err := h.st.SaveUser(usr.User); err != nil {
-		response.ErrCannotSave(w)
-		return
-	}
-
-	response.Ok(w, nil)
-}
-
-func (h *usersHandler) Update(
-	w http.ResponseWriter, r *http.Request,
-) {
-	loc := GLOC_USRS + "Update()"
-
-	usrAccessLevel, ok := lib.FetchAccessLevelFromCtx(r.Context())
-	if !ok {
-		h.log.Errorf("%s: failed to fetch access level from context", loc)
-		response.ErrCannotUpdate(w)
-		return
-	}
-	if usrAccessLevel < lib.ADMIN_ALEVEL {
-		h.log.Warnf("%s: blocked to get users, access: %d, required: %d", loc, usrAccessLevel, lib.ADMIN_ALEVEL)
-		response.ErrYouArntAdmin(w)
-		return
-	}
-
-	sid, id, err := lib.GetID(api.USER_POINT, r.RequestURI)
-	if err != nil {
-		h.log.Errorf("%s: invalid id '%s' in URI '%s': %v", loc, sid, r.RequestURI, err)
-		response.ErrInvalidID(w, sid)
-		return
-	}
-
-	type user struct {
-		models.User
-		Password string `json:"password"`
-	}
-	var usr user
-	if err := json.NewDecoder(r.Body).Decode(&usr); err != nil {
-		h.log.Errorf("%s: failed to decode JSON body: %v", loc, err)
-		response.ErrInvalidRequest(w, "invalid JSON")
-		return
-	}
-	usr.ID = id
-
-	if usr.Login == "" {
-		response.ErrInvalidRequest(w, "login cannot be empty!")
-		return
-	}
-	if usr.Password == "" {
-		response.ErrInvalidRequest(w, "password cannot be empty!")
-		return
-	}
-	if usr.AccessLevel < 1 || usrAccessLevel > lib.ADMIN_ALEVEL {
-		response.ErrInvalidRequest(w, "invalid access_level "+strconv.Itoa(usr.AccessLevel))
-		return
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Fatal(err)
-	}
-	usr.PHash = hashedPassword
-	h.log.Debugf("%s: decoded usr: %+v", loc, usr)
-
-	if err := h.st.UpdateUser(usr.User); err != nil {
-		if err.Error() == st.ErrLetterNotFound(id).Error() {
-			h.log.Warnf("%s: user with id not found: %v", loc, err)
-			response.ErrNotFound(w, sid)
-		} else {
-			h.log.Errorf("%s: error when updating user: %v", loc, err)
-			response.ErrCannotUpdate(w)
-		}
-		return
-	}
-
-	response.Ok(w, nil)
+	response.OkEmpty(w)
 }

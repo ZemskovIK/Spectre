@@ -3,6 +3,8 @@ package lib
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"spectre/internal/models"
 )
 
 // ToBase64 marshals any Go value to JSON and encodes the result as a base64 string.
@@ -30,4 +32,32 @@ func ToBase64Slice[T any](data []T) ([]string, error) {
 		res = append(res, b64)
 	}
 	return res, nil
+}
+
+// FetchLetterFromB64 decodes a base64-encoded JSON string from a slice and unmarshals it into a Letter.
+// Expects b64 to be a slice with the first element as a base64-encoded string.
+// Returns an error if decoding or unmarshalling fails.
+func FetchLetterFromB64(l *models.Letter, b64 interface{}) error {
+	sl, ok := b64.([]interface{})
+	if !ok {
+		return errors.New("b64 is not a slice of")
+	}
+	sb64, ok := sl[0].(string)
+	if !ok {
+		return errors.New("not a string in slice")
+	}
+	if sb64 == "" {
+		return errors.New("b64 string is empty")
+	}
+	data, err := base64.StdEncoding.DecodeString(sb64)
+	if err != nil {
+		return err
+	}
+	if len(data) == 0 {
+		return errors.New("decoded base64 is empty")
+	}
+	if err := json.Unmarshal(data, l); err != nil {
+		return err
+	}
+	return nil
 }

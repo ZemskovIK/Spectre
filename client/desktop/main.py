@@ -1,9 +1,12 @@
-from tkinter import *
+from  tkinter import *
 from tkinter import ttk, messagebox, PhotoImage
-from PIL import Image, ImageTk
 import requests
 import jwt
+import json
+import base64
+import crypto
 import os
+from pyi_resource import resource_path
 
 class MilitaryLettersApp:
     def __init__(self, root):
@@ -49,9 +52,36 @@ class MilitaryLettersApp:
         self.api_url = "http://localhost:5000"
         self.token = None
         self.current_user = None
-        
+        # self.aes_key = b'\xb9M\x0b8\x00\x10\x90\x16\xc7\xed\x93\x08\xc1\x00J\xf2\x08\xb0\x01~\xb5_G\x805\xac\x95\xa2t`1\xde'
+        # self.hmac_key = b'Dp\xc2\xc6B\x16\xb8\\\xaf_z5\x8dC\x1f3\x19\n\xe1u8\xe1Q:\xd1}\xb2\xa0\xf8$\xa6\x0e'
+        self.aes_key = None
+        self.hmac_key = None
+        self.client = None
+
+        self.key_exchange()
         self.show_login_form()    
         
+    def key_exchange(self):
+        response = self.make_authenticated_request(
+            "GET", 
+            f"{self.api_url}/ecdh"
+        )
+        response_data = response.json()
+        print(f"main.py | key_exchange() response(server_key): {response_data}, {type(response_data)}")
+        preresult = ecdh(response_data)
+        # print(f"main.py | key_exchange() result(client_key): {result}, {type(result)}")
+        result = preresult[0]
+        self.aes_key = preresult[1]
+        self.hmac_key = preresult[2]
+        print(f"main.py | key_exchange() hmac_key: {self.hmac_key}, {type(preresult[2])}")
+        response = self.make_authenticated_request(
+            "POST", 
+            f"{self.api_url}/ecdh",
+            json=result
+        )
+
+        print(f"main.py | key_exchange() was done")
+
     def show_login_form(self):
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -94,6 +124,8 @@ class MilitaryLettersApp:
         if not login or not password:
             error_msg = "Введите логин и пароль"
             messagebox.showerror("Ошибка", error_msg)
+            error_msg = "Введите логин и пароль"
+            messagebox.showerror("Ошибка", error_msg)
             return
         
         try:
@@ -129,7 +161,27 @@ class MilitaryLettersApp:
                         options={"verify_sub": False}
                     )
                     
+                    unverified_payload = jwt.decode(
+                        self.token,
+                        options={"verify_signature": False},
+                        algorithms=["HS256"]
+                    )
+                    
+                    if "sub" in unverified_payload:
+                        if not isinstance(unverified_payload["sub"], str):
+                            unverified_payload["sub"] = str(unverified_payload["sub"])
+                    
+                    payload = jwt.decode(
+                        self.token,
+                        "test_secret",
+                        algorithms=["HS256"],
+                        options={"verify_sub": False}
+                    )
+                    
                     self.user_role = payload.get("role", 1)
+                    
+                except Exception as e:
+                    error_msg = f"Ошибка декодирования токена: {str(e)}"
                     
                 except Exception as e:
                     error_msg = f"Ошибка декодирования токена: {str(e)}"
@@ -140,7 +192,15 @@ class MilitaryLettersApp:
                 error_msg = response.json().get("message", "Неверный логин или пароль")
                 messagebox.showerror("Ошибка", error_msg)
                 
+                error_msg = response.json().get("message", "Неверный логин или пароль")
+                messagebox.showerror("Ошибка", error_msg)
+                
         except requests.exceptions.RequestException as e:
+            error_msg = f"Ошибка подключения: {str(e)}"
+            messagebox.showerror("Ошибка", error_msg)
+        except Exception as e:
+            error_msg = f"Неожиданная ошибка: {str(e)}"
+            messagebox.showerror("Ошибка", error_msg)
             error_msg = f"Ошибка подключения: {str(e)}"
             messagebox.showerror("Ошибка", error_msg)
         except Exception as e:
@@ -469,13 +529,27 @@ class MilitaryLettersApp:
             messagebox.showerror("Ошибка", "Все поля должны быть заполнены")
             return
         
+        print(f"main.py | submit_create content: {content}, {type(content)}")
+
+        content_bytes = json.dumps(content).encode('utf-8')
+
+        content_bytes = {
+            "content": [base64.b64encode(content_bytes).decode('utf-8')]
+        }
+
+        print(f"main.py | submit_create content_bytes: {content_bytes}, {type(content_bytes)}")
+
+        letter_data = encrypt(content_bytes, self.aes_key, self.hmac_key)
+        
         try:
             response = self.make_authenticated_request(
                 "POST", 
                 f"{self.api_url}/api/letters",
-                json=content
+                json=letter_data
             )
             response_data = response.json()
+
+
            
             if response.status_code == 200 and response_data.get("error") is None:
                 messagebox.showinfo("Успех", f"Письмо успешно добавлено")
@@ -494,8 +568,10 @@ class MilitaryLettersApp:
         
         try:
             if query.isdigit():
+                print(f"[DEBU] searchID")
                 self._search_by_letter_id(query)
             else:
+                print(f"[DEBU] searchAuthor")
                 self._search_by_author(query)
         except Exception as e:
             messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
@@ -505,26 +581,39 @@ class MilitaryLettersApp:
             "GET", 
             f"{self.api_url}/api/letters/{letter_id}"
         )
-        response_data = response.json()
-        
-        if response.status_code == 200 and response_data.get("content"):
-            self.display_results([response_data["content"]])
-        else:
-            error_msg = response_data.get("error", "Письмо не найдено")
-            messagebox.showerror("Ошибка", error_msg)
-
-    def _search_by_author(self, author_name):
-        response = self.make_authenticated_request(
-            "GET", 
-            f"{self.api_url}/api/letters"
-        )
+        response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
         
         if response.status_code != 200:
             error_msg = response.json().get("error", "Не удалось получить список писем")
             messagebox.showerror("Ошибка", error_msg)
             return
         
-        all_letters = response.json().get("content", [])
+        bytes_data = base64.b64decode(response_data.get("content")[0])
+        json_data = json.loads(bytes_data.decode('utf-8'))
+        
+        if json_data:
+            self.display_results([json_data])
+        else:
+            messagebox.showinfo("Информация", "Письмо с данным ID не найдено")
+
+    def _search_by_author(self, author_name):
+        response = self.make_authenticated_request(
+            "GET", 
+            f"{self.api_url}/api/letters"
+        )
+        response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
+        
+        if response.status_code != 200:
+            error_msg = response.json().get("error", "Не удалось получить список писем")
+            messagebox.showerror("Ошибка", error_msg)
+            return
+        
+        all_letters = []
+        for item in response_data.get("content"):
+                bytes_data = base64.b64decode(item)
+                json_data = json.loads(bytes_data.decode('utf-8'))
+                all_letters.append(json_data)
+                                
         results = [
             letter for letter in all_letters 
             if str(letter.get("author", "")).lower() == author_name.lower()
@@ -541,15 +630,20 @@ class MilitaryLettersApp:
                 "GET", 
                 f"{self.api_url}/api/letters"
             )
-            response_data = response.json()
-            
+            response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
+
+            result = []
+            for item in response_data.get("content"):
+                bytes_data = base64.b64decode(item)
+                json_data = json.loads(bytes_data.decode('utf-8'))
+                result.append(json_data)
+                            
             self.results_body.config(state=NORMAL)
             self.results_body.delete("1.0", END)
             
             if response.status_code == 200 and response_data.get("content"):                
-                letters = response_data["content"]
-                if letters:
-                    for letter in letters:
+                if result:
+                    for letter in result:
                         formatted_letter = (
                             f"ID: {letter.get('id', 'N/A')}\n"
                             f"Автор: {letter.get('author', 'N/A')}\n"
@@ -561,9 +655,9 @@ class MilitaryLettersApp:
                         self.results_body.insert(END, formatted_letter)
                 else:
                     self.results_body.insert(END, "В базе нет писем")
-            else:
-                error_msg = letters.get("error", "Неизвестная ошибка")
-                self.results_body.insert(END, f"Ошибка: {error_msg}")
+            # else:
+            #     error_msg = letters.get("error", "Неизвестная ошибка")
+            #     self.results_body.insert(END, f"Ошибка: {error_msg}")
                 
             self.results_body.config(state=DISABLED)
         except requests.exceptions.RequestException as e:
@@ -580,9 +674,10 @@ class MilitaryLettersApp:
                 "GET", 
                 f"{self.api_url}/api/letters/{letter_id}"
             )
-            
+            response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
             if response.status_code == 200:
-                letter_data = response.json().get("content")
+                bytes_data = base64.b64decode(response_data.get("content")[0])
+                letter_data = json.loads(bytes_data.decode('utf-8'))
 
                 if letter_data:    
                     self.update_author.delete(0, END)
@@ -597,8 +692,7 @@ class MilitaryLettersApp:
                 else:
                     messagebox.showerror("Ошибка", "Данные письма не получены")
             else:
-                error_msg = response.json().get("error", "Письмо не найдено")
-                messagebox.showerror("Ошибка", error_msg)
+                messagebox.showinfo("Информация", "Письмо с данным ID не найдено")
         except requests.exceptions.RequestException as e:
             messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
     
@@ -619,6 +713,19 @@ class MilitaryLettersApp:
             messagebox.showerror("Ошибка", "Все поля должны быть заполнены")
             return
         
+        # Я(АЗАМАТ) ТРОГАЛ ЭТУ ЧАСТЬ КОДА!!
+        content_bytes = json.dumps(content).encode('utf-8')
+
+        content_bytes = {
+            "content": [base64.b64encode(content_bytes).decode('utf-8')]
+        }
+
+        print(f"main.py | submit_update() content_bytes: {content_bytes}, {type(content_bytes)}")
+        
+        content = encrypt(content_bytes, self.aes_key, self.hmac_key)
+        # Трогал только то, что между этим и верхним комментами.
+        # Что я изменил?? Добавил шифрование в эту функцию.
+
         try:
             response = self.make_authenticated_request(
                 "PUT", 
@@ -826,6 +933,69 @@ class MilitaryLettersApp:
                 messagebox.showerror("Ошибка", error_msg)
         except Exception as e:
             messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
+
+def decrypt(data, aes_key, hmac_key):
+    print(f"\nmain.py | decrypt() data: {data}, {type(data)}\n")
+
+    crypto_box = crypto.Aes256CbcHmac(aes_key, hmac_key)
+
+    decrypted_text = crypto_box.decrypt(data)
+
+    data_list = json.loads(decrypted_text.decode('utf-8'))
+    content_base64_list = [base64.b64encode(item.encode('utf-8')).decode('utf-8')
+        for item in data_list]
+    result = {
+        "content": content_base64_list
+    }
+
+    print(f"\nmain.py | decrypt() result: {result}\n")
+    return result
+
+def encrypt(data, aes_key, hmac_key):
+    # data = request.get_json()
+    content = [base64.b64decode(data['content'][0]).decode("utf-8")]
+
+    json_str = json.dumps(content)
+    data = json_str.encode('utf-8')
+
+    print(f"\nmain.py | encrypt() data in bytes: {data}, {type(data)}\n")
+    # print(f"\nserver.py | encrypt() content: {content}\n")
+
+    crypto_box = crypto.Aes256CbcHmac(aes_key, hmac_key)
+    nonce = os.urandom(12)
+
+    encrypted_text = crypto_box.encrypt(data, nonce)
+
+    print(f"\nmain.py | encrypt() encrypted_text: {encrypted_text}, {type(encrypted_text)}\n")
+
+    # data_list = json.loads(encrypted_text.decode('utf-8'))
+    # content_base64_list = [base64.b64encode(item.encode('utf-8')).decode('utf-8')
+    #     for item in data_list]
+    # result = {
+    #     "content": content_base64_list
+    # }
+
+    return json.dumps(encrypted_text)
+
+def ecdh(data):
+    server_pub = data["key"]
+    client = crypto.ECDHKeyExchange() # 4
+    client_pub = client.get_public_key_base64() # 5
+
+    client.compute_shared_secret(server_pub) # 7,9
+
+    # Ключи снизу используем для шифрования и проверки целостности
+    aes_key = client.aes_key
+    hmac_key = client.hmac_key
+    # app.aes_key = client.aes_key
+    # app.hmac_key = client.hmac_key
+    result = {
+        "key": client_pub
+    }
+
+    print(f"\nmain.py | ecdh() aes_key, hmac_key: {aes_key}\n{hmac_key}\n")
+
+    return [result, aes_key, hmac_key]
 
 if __name__ == "__main__":
     root = Tk()
