@@ -1,7 +1,5 @@
 package handlers
 
-// ! TODO : think about copy-paste
-
 import (
 	"net/http"
 	"spectre/internal/models"
@@ -64,7 +62,7 @@ func (h *lettersHandler) GetAll(
 
 	if len(letters) == 0 {
 		h.log.Warnf("%s: no letters found for access level %d", loc, usrAccess)
-		response.Ok(w, []interface{}{})
+		response.OkWithContent(w, []interface{}{})
 		return
 	}
 
@@ -73,7 +71,7 @@ func (h *lettersHandler) GetAll(
 	// ! TODO : encrypt
 	b64, err := lib.ToBase64Slice(letters)
 	if err != nil {
-		h.log.Errorf("%s: cannot converto to b64: %v", loc, err)
+		h.log.Errorf("%s: cannot convert to b64: %v", loc, err)
 		response.ErrCannotGetB64Strings(w)
 		return
 	}
@@ -109,7 +107,6 @@ func (h *lettersHandler) GetOne(
 		return
 	}
 
-	h.log.Infof("%s: retrieving letter with id: %d", loc, id)
 	letter, err := h.st.GetLetterByID(id)
 	if err != nil {
 		if err.Error() == st.ErrLetterNotFound(id).Error() {
@@ -127,10 +124,8 @@ func (h *lettersHandler) GetOne(
 		response.ErrBlockedToGet(w, usrAccess, letter.AccessLevel)
 		return
 	}
-
 	h.log.Debugf("%s: successfully retrieved letter: %+v", loc, letter)
 
-	// ! TODO : encrypt
 	b64, err := lib.ToBase64(letter)
 	if err != nil {
 		h.log.Errorf("%s: cannot converto to b64: %v", loc, err)
@@ -187,7 +182,7 @@ func (h *lettersHandler) Delete(
 	}
 
 	h.log.Debugf("%s: letter with id %d deleted successfully", loc, id)
-	response.Ok(w, nil)
+	response.OkWithContent(w, nil)
 }
 
 // Add creates a new letter (admin only).
@@ -210,7 +205,6 @@ func (h *lettersHandler) Add(
 		return
 	}
 
-	// ! TODO : dectypt
 	resp, err := h.crypto.Decrypt(r)
 	if err != nil {
 		h.log.Errorf("%s: cannot decrypt %v", loc, err)
@@ -218,21 +212,16 @@ func (h *lettersHandler) Add(
 		return
 	}
 	var letter models.Letter
-	lib.FetchLetterFromB64(&letter, resp.Content)
-
-	// ! TODO validation func
-	if letter.Body == "" {
-		h.log.Warnf("%s: body cannot be empty", loc)
-		response.ErrInvalidRequest(w, "body cannot be empty")
+	if err := lib.FetchLetterFromB64(&letter, resp.Content); err != nil {
+		h.log.Errorf("%s: cannot fetch from b64: %v", loc, err)
+		response.ErrCannotFetchFromB64(w)
 		return
 	}
-	if letter.Author == "" {
-		h.log.Infof("%s: author is empty, setting to 'unknown'", loc)
-		letter.Author = "unknown"
-	}
-	if letter.FoundIn == "" {
-		h.log.Infof("%s: foundIn is empty, setting to 'unknown'", loc)
-		letter.FoundIn = "unknown"
+
+	msg, ok := lib.ValidateLetter(letter, h.log)
+	if !ok {
+		response.ErrInvalidRequest(w, msg)
+		return
 	}
 
 	h.log.Debugf("%s: saving letter: %+v", loc, letter)
@@ -243,7 +232,7 @@ func (h *lettersHandler) Add(
 	}
 
 	h.log.Debugf("%s: letter saved successfully", loc)
-	response.Ok(w, nil)
+	response.OkWithContent(w, nil)
 }
 
 // Update updates a letter by id (admin only).
@@ -273,7 +262,6 @@ func (h *lettersHandler) Update(
 		return
 	}
 
-	// ! TODO : decrypt
 	resp, err := h.crypto.Decrypt(r)
 	if err != nil {
 		h.log.Errorf("%s: error cannot decrypt data: %v", loc, err)
@@ -283,26 +271,17 @@ func (h *lettersHandler) Update(
 	var letter models.Letter
 	if err := lib.FetchLetterFromB64(&letter, resp.Content); err != nil {
 		h.log.Errorf("%s: error cannot fetch letter from b64: %v", loc, err)
-		// TODO response
+		response.ErrCannotFetchFromB64(w)
 		return
 	}
 
 	letter.ID = id
 	h.log.Debugf("%s: decoded letter for update: %+v", loc, letter)
 
-	// ! TODO validation func
-	if letter.Body == "" {
-		h.log.Warnf("%s: body cannot be empty", loc)
-		response.ErrInvalidRequest(w, "body cannot be empty")
+	msg, ok := lib.ValidateLetter(letter, h.log)
+	if !ok {
+		response.ErrInvalidRequest(w, msg)
 		return
-	}
-	if letter.Author == "" {
-		h.log.Infof("%s: author is empty, setting to 'unknown'", loc)
-		letter.Author = "unknown"
-	}
-	if letter.FoundIn == "" {
-		h.log.Infof("%s: foundIn is empty, setting to 'unknown'", loc)
-		letter.FoundIn = "unknown"
 	}
 
 	h.log.Debugf("%s: updating letter with id: %d", loc, id)
@@ -318,5 +297,5 @@ func (h *lettersHandler) Update(
 	}
 
 	h.log.Debugf("%s: letter with id %d updated successfully", loc, id)
-	response.Ok(w, nil)
+	response.OkWithContent(w, nil)
 }

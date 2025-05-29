@@ -1,5 +1,9 @@
 package main
 
+/*
+	This app used to running db migrations up/down with versioning.
+*/
+
 import (
 	"flag"
 	"spectre/pkg/logger"

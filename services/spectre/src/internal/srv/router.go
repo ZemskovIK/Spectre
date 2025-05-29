@@ -35,6 +35,19 @@ func NewRouter(s st.Storage, log *logger.Logger, cr *proxy.CryptoClient) *Router
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}),
 	)
 
+	// ecdh
+	mux.Handle(methods.GET(api.ECDH_POINT),
+		http.HandlerFunc(usersHL.ECDHGetK),
+	)
+	mux.Handle(methods.POST(api.ECDH_POINT),
+		http.HandlerFunc(usersHL.ECDHSetA),
+	)
+
+	// auth
+	mux.Handle(methods.POST(auth.LOGIN_POINT),
+		http.HandlerFunc(authHL.Login),
+	)
+
 	// api
 
 	// letters
@@ -57,19 +70,6 @@ func NewRouter(s st.Storage, log *logger.Logger, cr *proxy.CryptoClient) *Router
 	// users
 	mux.Handle(methods.GET(api.USERS_POINT),
 		http.HandlerFunc(usersHL.GetAll),
-	)
-
-	// ecdh
-	mux.Handle(methods.GET(api.ECDH_POINT),
-		http.HandlerFunc(usersHL.ECDHGetK),
-	)
-	mux.Handle(methods.POST(api.ECDH_POINT),
-		http.HandlerFunc(usersHL.ECDHSetA),
-	)
-
-	// auth
-	mux.Handle(methods.POST(auth.LOGIN_POINT),
-		http.HandlerFunc(authHL.Login),
 	)
 
 	return &Router{

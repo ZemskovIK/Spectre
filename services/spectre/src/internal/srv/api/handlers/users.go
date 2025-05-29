@@ -49,7 +49,6 @@ func (h *usersHandler) GetAll(
 		response.ErrCannotRetrieveUsers(w)
 		return
 	}
-
 	if usrAccess < lib.ADMIN_ALEVEL {
 		h.log.Warnf("%s: blocked to get users, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
 		response.ErrBlockedToGet(w, usrAccess, lib.ADMIN_ALEVEL)
@@ -65,12 +64,12 @@ func (h *usersHandler) GetAll(
 
 	if len(users) == 0 {
 		h.log.Warnf("%s: no users found", loc)
-		response.Ok(w, []interface{}{})
+		response.OkWithContent(w, []interface{}{})
 		return
 	}
 
 	h.log.Debugf("%s: successfully retrieved %d users", loc, len(users))
-	response.Ok(w, users)
+	response.OkWithContent(w, users)
 }
 
 func (h *usersHandler) ECDHGetK(
@@ -86,13 +85,14 @@ func (h *usersHandler) ECDHGetK(
 		return
 	}
 
-	response.OkWithKey(w, resp)
+	response.OkWithECDHKey(w, resp)
 }
 
 func (h *usersHandler) ECDHSetA(
 	w http.ResponseWriter, r *http.Request,
 ) {
 	loc := GLOC_USRS + "ECDHSetA()"
+	h.log.Debugf("%s: handler called", loc)
 
 	if err := h.crypto.SetA(r); err != nil {
 		h.log.Errorf("%s: error when set a from proxy: %v", loc, err)

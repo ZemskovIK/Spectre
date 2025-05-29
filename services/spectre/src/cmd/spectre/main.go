@@ -1,5 +1,10 @@
 package main
 
+/*
+	Spectre is a REST-api based service for working with letters and users.
+	Service includes jwt-based auth and working with enryption (look at crypto service).
+*/
+
 import (
 	"context"
 	"net/http"
@@ -37,6 +42,7 @@ func main() {
 		"http://127.0.0.1:7654/decrypt",
 		"http://127.0.0.1:7654/ecdh",
 	)
+	log.Info("init proxy")
 
 	// init router
 	r := server.NewRouter(st, log, crypto)

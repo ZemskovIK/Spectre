@@ -29,12 +29,12 @@ func NewCryptoClient(epoint, dpoint, ecdhPoint string) *CryptoClient {
 
 // Encrypt sends a slice of base64 strings to the external encryption service.
 // Returns a response.Response struct with the result or an error.
-func (c *CryptoClient) Encrypt(b64 []string) (response.Response, error) {
+func (c *CryptoClient) Encrypt(b64 []string) (response.ResponseWithContent, error) {
 	reqBody, err := json.Marshal(map[string][]string{
 		"content": b64,
 	})
 	if err != nil {
-		return response.Response{}, err
+		return response.EmptyWithContent, err
 	}
 
 	resp, err := c.Client.Post(
@@ -43,16 +43,16 @@ func (c *CryptoClient) Encrypt(b64 []string) (response.Response, error) {
 		bytes.NewReader(reqBody),
 	)
 	if err != nil {
-		return response.Response{}, err
+		return response.EmptyWithContent, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return response.Response{}, errBadStatusCode(resp.StatusCode)
+		return response.EmptyWithContent, errBadStatusCode(resp.StatusCode)
 	}
 
-	var res response.Response
+	var res response.ResponseWithContent
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return response.Response{}, err
+		return response.EmptyWithContent, err
 	}
 
 	return res, nil
@@ -60,23 +60,23 @@ func (c *CryptoClient) Encrypt(b64 []string) (response.Response, error) {
 
 // Decrypt sends the request body to the external decryption service and decodes the response.
 // Returns a response.Response struct with the result or an error if the request fails or the response is invalid.
-func (c *CryptoClient) Decrypt(r *http.Request) (response.Response, error) {
+func (c *CryptoClient) Decrypt(r *http.Request) (response.ResponseWithContent, error) {
 	resp, err := c.Client.Post(
 		c.DecryptEndpoint,
 		"application/json",
 		r.Body,
 	)
 	if err != nil {
-		return response.Response{}, err
+		return response.EmptyWithContent, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return response.Response{}, errBadStatusCode(resp.StatusCode)
+		return response.EmptyWithContent, errBadStatusCode(resp.StatusCode)
 	}
 
-	var res response.Response
+	var res response.ResponseWithContent
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return response.Response{}, err
+		return response.EmptyWithContent, err
 	}
 
 	return res, nil
@@ -88,7 +88,7 @@ func (c *CryptoClient) GetK(r *http.Request) (response.ECDHResponse, error) {
 	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return response.ECDHResponse{}, err
+		return response.EmptyEDCH, err
 	}
 
 	resp, err := c.Client.Post(
@@ -97,16 +97,16 @@ func (c *CryptoClient) GetK(r *http.Request) (response.ECDHResponse, error) {
 		bytes.NewBuffer(jsonData),
 	)
 	if err != nil {
-		return response.ECDHResponse{}, err
+		return response.EmptyEDCH, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return response.ECDHResponse{}, errBadStatusCode(resp.StatusCode)
+		return response.EmptyEDCH, errBadStatusCode(resp.StatusCode)
 	}
 
 	var res response.ECDHResponse
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return response.ECDHResponse{}, err
+		return response.EmptyEDCH, err
 	}
 
 	return res, nil
