@@ -3,6 +3,7 @@ package proxy
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"spectre/internal/srv/lib/response"
 	"time"
@@ -33,9 +34,15 @@ func NewCryptoClient(epoint, dpoint, ecdhPoint string) *CryptoClient {
 
 // Encrypt sends a slice of base64 strings to the external encryption service.
 // Returns a response.Response struct with the result or an error.
-func (c *CryptoClient) Encrypt(b64 []string) (response.ResponseWithContent, error) {
-	reqBody, err := json.Marshal(map[string][]string{
-		"content": b64,
+func (c *CryptoClient) Encrypt(b64 []string, from string) (response.ResponseWithContent, error) {
+	type req struct {
+		Content []string `json:"content"`
+		From    string   `json:"from"`
+	}
+
+	reqBody, err := json.Marshal(req{
+		Content: b64,
+		From:    from,
 	})
 	if err != nil {
 		return response.EmptyWithContent, err
@@ -65,10 +72,28 @@ func (c *CryptoClient) Encrypt(b64 []string) (response.ResponseWithContent, erro
 // Decrypt sends the request body to the external decryption service and decodes the response.
 // Returns a response.Response struct with the result or an error if the request fails or the response is invalid.
 func (c *CryptoClient) Decrypt(r *http.Request) (response.ResponseWithContent, error) {
+
+	var originalData map[string]interface{}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		return response.EmptyWithContent, err
+	}
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	if err := json.Unmarshal(bodyBytes, &originalData); err != nil {
+		return response.EmptyWithContent, err
+	}
+	originalData["from"] = r.Host
+
+	modifiedBody, err := json.Marshal(originalData)
+	if err != nil {
+		return response.EmptyWithContent, err
+	}
+
 	resp, err := c.Client.Post(
 		PROTO+c.DecryptEndpoint,
 		"application/json",
-		r.Body,
+		bytes.NewBuffer(modifiedBody),
 	)
 	if err != nil {
 		return response.EmptyWithContent, err

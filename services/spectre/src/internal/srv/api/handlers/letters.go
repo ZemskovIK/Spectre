@@ -75,7 +75,7 @@ func (h *lettersHandler) GetAll(
 		response.ErrCannotGetB64Strings(w)
 		return
 	}
-	resp, err := h.crypto.Encrypt(b64)
+	resp, err := h.crypto.Encrypt(b64, r.Host)
 	if err != nil {
 		h.log.Errorf("%s: cannot enctypt: %v", loc, err)
 		response.ErrCannotEncryptData(w)
@@ -132,7 +132,7 @@ func (h *lettersHandler) GetOne(
 		response.ErrCannotGetB64Strings(w)
 		return
 	}
-	resp, err := h.crypto.Encrypt([]string{b64})
+	resp, err := h.crypto.Encrypt([]string{b64}, r.Host)
 	if err != nil {
 		h.log.Errorf("%s: cannot enctypt: %v", loc, err)
 		response.ErrCannotEncryptData(w)
