@@ -12,7 +12,6 @@ import (
 )
 
 const GLOC_LTS = "src/internal/api/handlers/letters.go/" // for logging
-const GLOC_LTS = "src/internal/api/handlers/letters.go/" // for logging
 
 type lettersStore interface {
 	GetAllLettersWithAccess(accessLevel int) ([]models.Letter, error)
@@ -82,7 +81,7 @@ func (h *lettersHandler) GetAll(
 		return
 	}
 
-	response.Ok(w, letters)
+	response.OkWithResponse(w, resp)
 }
 
 // GetOne returns a single letter by id according to user's access level.
