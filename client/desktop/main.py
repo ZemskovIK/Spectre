@@ -600,7 +600,7 @@ def encrypt(data, aes_key, hmac_key):
     return json.dumps(encrypted_text)
 
 def ecdh(server_pub):
-    
+
     clinet = crypto.ECDHKeyExchange() # 4
     client_pub = client.get_public_key_base64() # 5
 
@@ -614,6 +614,8 @@ def ecdh(server_pub):
         "content": client_pub
     }
 
+    print(f"main.py | ecdh() result: {result}, {type(result)}")
+    
     return result
 
 if __name__ == "__main__":

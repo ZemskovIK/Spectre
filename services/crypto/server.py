@@ -2,8 +2,8 @@ from flask import Flask, request, jsonify
 import crypto, os, base64, json
 
 # Пока тестируем без ECDH, ключи будут заданы заранее, но по умолчанию None
-server_aes_key = b'\xb9M\x0b8\x00\x10\x90\x16\xc7\xed\x93\x08\xc1\x00J\xf2\x08\xb0\x01~\xb5_G\x805\xac\x95\xa2t`1\xde'
-server_hmac_key = b'Dp\xc2\xc6B\x16\xb8\\\xaf_z5\x8dC\x1f3\x19\n\xe1u8\xe1Q:\xd1}\xb2\xa0\xf8$\xa6\x0e'
+# server_aes_key = b'\xb9M\x0b8\x00\x10\x90\x16\xc7\xed\x93\x08\xc1\x00J\xf2\x08\xb0\x01~\xb5_G\x805\xac\x95\xa2t`1\xde'
+# server_hmac_key = b'Dp\xc2\xc6B\x16\xb8\\\xaf_z5\x8dC\x1f3\x19\n\xe1u8\xe1Q:\xd1}\xb2\xa0\xf8$\xa6\x0e'
 
 PORT = 7654
 HOST = '0.0.0.0'
@@ -21,6 +21,7 @@ keys_by_users = {}
 @app.route('/encrypt', methods=['POST'])
 def encrypt():
     data = request.get_json()
+    user_ip = data["from"]
     print(f"server.py | encrypt() data: {data}, {type(data)}")
     content = [base64.b64decode(i).decode("utf-8") for i in data['content']]
 
@@ -30,7 +31,9 @@ def encrypt():
     print(f"\nserver.py | encrypt() json_str: {json_str}, {type(json_str)}\n")
     print(f"\nserver.py | encrypt() content: {content}\n")
 
-    crypto_box = crypto.Aes256CbcHmac(server_aes_key, server_hmac_key)
+
+    crypto_box = crypto.Aes256CbcHmac(keys_by_users[user_ip][0], keys_by_users[user_ip][1])
+    # crypto_box = crypto.Aes256CbcHmac(server_aes_key, server_hmac_key)
     nonce = os.urandom(12)
 
     encrypted_text = crypto_box.encrypt(content, nonce)
@@ -48,6 +51,7 @@ def encrypt():
 @app.route('/decrypt', methods=['POST'])
 def decrypt():
     data = request.get_json()
+    user_ip = data["from"]
     # content = base64.b64decode(data['content'])
     print(f"\nserver.py | decrypt() data: {data}, {type(data)}\n")
     # print(content)
@@ -104,17 +108,18 @@ def ecdh():
     elif len(data) == 2:
         user_ip = json.dumps(data["from"])
         client_public_key =  json.dumps(data["key"])
-
+        print(f"\nserver.py | ecdh()2 client_public_key: {client_public_key}\n")
         server = crypto.ECDHKeyExchange()
         server._private_key = keys_by_users[user_ip][1]
 
         server.compute_shared_secret(client_public_key)
 
         keys_by_users[user_ip] = [server.aes_key, server.hmac_key]
-
+        print(f"\nmain.py | ecdh() keys_by_users: {keys_by_users}\n")
         return '', 204
 
-    print(f"\nserver.py | ecdh() keys_by_users: {keys_by_users}\n")
+    # print(f"\nserver.py | ecdh() keys_by_users: {keys_by_users}\n")
+    # print(f"\nserver.py | ecdh() aes_key, hmac_key: {self.aes_key}\n{self.hmac_key}\n")
 
     return result
 
