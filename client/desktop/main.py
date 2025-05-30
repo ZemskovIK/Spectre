@@ -281,9 +281,9 @@ class MilitaryLettersApp:
 
     def _create_menu_card(self, parent, title, description, command, icon_type=None):        
         if icon_type == "letters":
-            icon_path = "letters_icon.png"
+            icon_path = resource_path("letters_icon.png")
         else:
-            icon_path = "users_icon.png"
+            icon_path = resource_path("users_icon.png")
         
         try:
             img = Image.open(icon_path)
