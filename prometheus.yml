@@ -1,0 +1,48 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'SpectreWebClientHealthy'
+    metrics_path: /probe
+    params:
+      module: [SpectreWebClientHealthy]
+    static_configs:
+      - targets:
+          - http://10.12.0.13:3000
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 10.12.0.15:9115
+
+  - job_name: 'SpectreBaseHealthy'
+    metrics_path: /probe
+    params:
+      module: [SpectreBaseHealthy]
+    static_configs:
+      - targets:
+          - http://10.12.0.12:5000
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 10.12.0.15:9115
+
+  - job_name: 'SpectreCryptoHealthy'
+    metrics_path: /probe
+    params:
+      module: [SpectreCryptoHealthy]
+    static_configs:
+      - targets:
+          - http://10.12.0.11:7654
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 10.12.0.15:9115
