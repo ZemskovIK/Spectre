@@ -20,7 +20,7 @@ class MilitaryLettersApp:
         x = (screen_width - window_width) // 2
         y = (screen_height - window_height) // 2
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        icon_path = os.path.join(os.path.dirname(__file__), "letters.png")
+        icon_path = os.path.join(os.path.dirname(__file__), "images/letters.png")
         self.img = PhotoImage(file=icon_path)
         self.root.iconphoto(True, self.img)
         
@@ -281,9 +281,9 @@ class MilitaryLettersApp:
 
     def _create_menu_card(self, parent, title, description, command, icon_type=None):        
         if icon_type == "letters":
-            icon_path = resource_path("letters_icon.png")
+            icon_path = resource_path("images/letters_icon.png")
         else:
-            icon_path = resource_path("users_icon.png")
+            icon_path = resource_path("images/users_icon.png")
         
         try:
             img = Image.open(icon_path)
