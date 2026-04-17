@@ -809,19 +809,62 @@ class MilitaryLettersApp:
             "GET", 
             f"{self.api_url}/api/users/{user_id}"
         )
-        return response.json() if response else None
+        
+        if response is None:
+            return None
+        
+        try:
+            decrypted_data = decrypt(response.json(), self.aes_key, self.hmac_key)
+            if decrypted_data and decrypted_data.get("content"):
+                user_base64 = decrypted_data["content"][0]
+                user_json = base64.b64decode(user_base64).decode('utf-8')
+                return json.loads(user_json)
+        except Exception as e:
+            print(f"DEBUG: Error decrypting user data: {e}")
+            return response.json()
+        
+        return None
     
     def create_user(self, login, password, access_level):
+        user_data = {
+            "login": login,
+            "password": password,
+            "access_level": access_level
+        }
+        
+        print(f"DEBUG: Creating user with data: {user_data}")
+        
+        user_json = json.dumps(user_data)
+        user_base64 = base64.b64encode(user_json.encode('utf-8')).decode('utf-8')
+        
+        content = {
+            "content": [user_base64]
+        }
+        
+        encrypted_data = encrypt(content, self.aes_key, self.hmac_key)
+        
+        if isinstance(encrypted_data, str):
+            encrypted_data = json.loads(encrypted_data)
+        
+        print(f"DEBUG: Sending encrypted user data")
+        
         response = self.make_authenticated_request(
             "POST", 
             f"{self.api_url}/api/users",
-            json={
-                "login": login,
-                "password": password,
-                "access_level": access_level
-            }
+            json=encrypted_data
         )
-        return response.json() if response else None
+        
+        if response is None:
+            print("DEBUG: Response is None")
+            return None
+        
+        print(f"DEBUG: Response status: {response.status_code}")
+        print(f"DEBUG: Response text: {response.text}")
+        
+        try:
+            return response.json()
+        except:
+            return {"error": response.text}
 
     def delete_user(self, user_id):
         response = self.make_authenticated_request(
