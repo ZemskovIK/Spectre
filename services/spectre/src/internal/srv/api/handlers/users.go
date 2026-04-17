@@ -3,10 +3,13 @@ package handlers
 import (
 	"net/http"
 	"spectre/internal/models"
+	"spectre/internal/srv/api"
 	"spectre/internal/srv/lib"
 	"spectre/internal/srv/lib/response"
 	"spectre/internal/srv/proxy"
 	"spectre/pkg/logger"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 const GLOC_USRS = "src/internal/api/handlers/users.go/" // for logging
@@ -103,4 +106,114 @@ func (h *usersHandler) ECDHSetA(
 	}
 
 	response.OkEmpty(w)
+}
+
+// Create creates a new user (admin only)
+func (h *usersHandler) Create(
+	w http.ResponseWriter, r *http.Request,
+) {
+	loc := GLOC_USRS + "Create()"
+	h.log.Infof("%s: handler called", loc)
+
+	// Check access
+	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
+	if !ok {
+		h.log.Errorf("%s: failed to fetch access level from context", loc)
+		response.ErrWithContent(w, http.StatusInternalServerError, "cannot get access level")
+		return
+	}
+	if usrAccess < lib.ADMIN_ALEVEL {
+		h.log.Warnf("%s: blocked to create user, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
+		response.ErrWithContent(w, http.StatusForbidden, "admin access required")
+		return
+	}
+
+	var req map[string]interface{}
+	if err := lib.ReadJSON(r, &req); err != nil {
+		h.log.Errorf("%s: failed to read request: %v", loc, err)
+		response.ErrWithContent(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	h.log.Debugf("%s: received request: %+v", loc, req)
+
+	login, _ := req["login"].(string)
+	password, _ := req["password"].(string)
+	accessLevel, _ := req["access_level"].(float64)
+
+	if login == "" || password == "" {
+		response.ErrWithContent(w, http.StatusBadRequest, "login and password required")
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		h.log.Errorf("%s: failed to hash password: %v", loc, err)
+		response.ErrWithContent(w, http.StatusInternalServerError, "cannot hash password")
+		return
+	}
+
+	newUser := models.User{
+		Login:       login,
+		PHash:       hashedPassword,
+		AccessLevel: int(accessLevel),
+	}
+
+	if err := h.st.SaveUser(newUser); err != nil {
+		h.log.Errorf("%s: failed to save user: %v", loc, err)
+		response.ErrWithContent(w, http.StatusInternalServerError, "cannot save user")
+		return
+	}
+
+	h.log.Infof("%s: user created successfully: %s", loc, login)
+	response.OkWithMessage(w, "User created successfully")
+}
+
+// GetOne returns a single user by ID (admin only)
+func (h *usersHandler) GetOne(
+	w http.ResponseWriter, r *http.Request,
+) {
+	loc := GLOC_USRS + "GetOne()"
+	h.log.Infof("%s: handler called", loc)
+	h.log.Debugf("%s: request: %+v", loc, r)
+
+	// Check access
+	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
+	if !ok {
+		h.log.Errorf("%s: failed to fetch access level from context", loc)
+		response.ErrCannotRetrieveUsers(w)
+		return
+	}
+	if usrAccess < lib.ADMIN_ALEVEL {
+		h.log.Warnf("%s: blocked to get user, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
+		response.ErrBlockedToGet(w, usrAccess, lib.ADMIN_ALEVEL)
+		return
+	}
+
+	// Get ID from URL
+	idStr := r.URL.Path[len(api.USER_POINT):]
+	if idStr == "" {
+		h.log.Errorf("%s: empty user ID", loc)
+		response.ErrInvalidID(w, idStr)
+		return
+	}
+
+	// Transform ID to int
+	id, err := lib.ParseID(idStr)
+	if err != nil {
+		h.log.Errorf("%s: invalid user ID: %v", loc, err)
+		response.ErrInvalidID(w, idStr)
+		return
+	}
+
+	// Get user from DB
+	user, err := h.st.GetUserByID(id)
+	if err != nil {
+		h.log.Errorf("%s: failed to get user by ID %d: %v", loc, id, err)
+		response.ErrCannotGetWithID(w, idStr)
+		return
+	}
+
+	h.log.Debugf("%s: successfully retrieved user: %+v", loc, user)
+	response.OkWithContent(w, user)
 }
