@@ -181,3 +181,31 @@ func ErrCannotECDHGetK(w http.ResponseWriter) {
 func ErrCannotECDHSetA(w http.ResponseWriter) {
 	ErrWithECDH(w, "cannot ECDH set A")
 }
+
+func ErrCannotCreateUser(w http.ResponseWriter) {
+	respondWithError(w, http.StatusInternalServerError, "cannot create user")
+}
+
+func ErrBlockedToCreate(w http.ResponseWriter, current, required int) {
+	respondWithError(w, http.StatusForbidden, fmt.Sprintf("access level %d is not enough, required %d", current, required))
+}
+
+func OkWithMessage(w http.ResponseWriter, message string) {
+	respondWithJSON(w, http.StatusOK, map[string]string{"message": message})
+}
+
+func ReadJSONFromBytes(data []byte, target interface{}) error {
+	return json.Unmarshal(data, target)
+}
+
+func respondWithError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
+
+func respondWithJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
+}
