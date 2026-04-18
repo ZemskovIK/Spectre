@@ -457,7 +457,7 @@ class MilitaryLettersApp:
         frame = ttk.Frame(self.read_tab)
         frame.pack(padx=10, pady=10)
         
-        ttk.Label(frame, text="ID письма или автора:").grid(row=0, column=0, sticky=W, pady=5)
+        ttk.Label(frame, text="ID письма или автор:").grid(row=0, column=0, sticky=W, pady=5)
         self.read_query = ttk.Entry(frame, width=50)
         self.read_query.grid(row=0, column=1, pady=5, padx=5)
         
@@ -877,7 +877,7 @@ class MilitaryLettersApp:
         frame = ttk.Frame(self.users_tab)
         frame.pack(padx=10, pady=10)
         
-        ttk.Label(frame, text="ID пользователя:").grid(row=0, column=0, sticky=W, pady=5)
+        ttk.Label(frame, text="ID или логин пользователя:").grid(row=0, column=0, sticky=W, pady=5)
         self.user_id_entry = ttk.Entry(frame, width=30)
         self.user_id_entry.grid(row=0, column=1, pady=5, padx=5)
         
@@ -915,24 +915,39 @@ class MilitaryLettersApp:
     def search_user(self):
         user_id = self.user_id_entry.get()
         if not user_id:
-            messagebox.showerror("Ошибка", "Введите ID пользователя")
+            messagebox.showerror("Ошибка", "Введите ID или логин пользователя")
             return
         
         try:
-            user_data = self.get_user_by_id(user_id)
-            if user_data and user_data.get("content"):
-                user = user_data["content"]
-                self.user_info_text.config(state=NORMAL)
-                self.user_info_text.delete("1.0", END)
-                self.user_info_text.insert(END, 
-                    f"ID: {user.get('id', 'N/A')}\n"
-                    f"Логин: {user.get('login', 'N/A')}\n"
-                    f"Уровень доступа: {user.get('access_level', 'N/A')}\n"
-                )
-                self.user_info_text.config(state=DISABLED)
-            else:
-                error_msg = user_data.get("error", "Пользователь не найден")
+            response = self.make_authenticated_request(
+                "GET", 
+                f"{self.api_url}/api/users/{user_id}"
+            )
+            
+            if response is None:
+                return
+                
+            response_data = response.json()
+            
+            if response.status_code != 200 or response_data.get("error"):
+                error_msg = response_data.get("error", "Пользователь не найден")
                 messagebox.showerror("Ошибка", error_msg)
+                return
+            
+            user = response_data.get("content")
+            if not user:
+                messagebox.showinfo("Информация", "Пользователь не найден")
+                return
+                
+            self.user_info_text.config(state=NORMAL)
+            self.user_info_text.delete("1.0", END)
+            self.user_info_text.insert(END, 
+                f"ID: {user.get('id', 'N/A')}\n"
+                f"Логин: {user.get('login', 'N/A')}\n"
+                f"Уровень доступа: {user.get('access_level', 'N/A')}\n"
+            )
+            self.user_info_text.config(state=DISABLED)
+                
         except Exception as e:
             messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
     
