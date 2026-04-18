@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"net/http"
 	"spectre/internal/models"
 	"spectre/internal/srv/api"
@@ -108,14 +109,12 @@ func (h *usersHandler) ECDHSetA(
 	response.OkEmpty(w)
 }
 
-// Create creates a new user (admin only)
 func (h *usersHandler) Create(
 	w http.ResponseWriter, r *http.Request,
 ) {
 	loc := GLOC_USRS + "Create()"
 	h.log.Infof("%s: handler called", loc)
 
-	// Check access
 	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
 	if !ok {
 		h.log.Errorf("%s: failed to fetch access level from context", loc)
@@ -123,19 +122,56 @@ func (h *usersHandler) Create(
 		return
 	}
 	if usrAccess < lib.ADMIN_ALEVEL {
-		h.log.Warnf("%s: blocked to create user, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
+		h.log.Warnf("%s: blocked, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
 		response.ErrWithContent(w, http.StatusForbidden, "admin access required")
 		return
 	}
 
-	var req map[string]interface{}
-	if err := lib.ReadJSON(r, &req); err != nil {
-		h.log.Errorf("%s: failed to read request: %v", loc, err)
-		response.ErrWithContent(w, http.StatusBadRequest, "invalid request")
+	var encryptedReq map[string]interface{}
+	if err := lib.ReadJSON(r, &encryptedReq); err != nil {
+		h.log.Errorf("%s: failed to read request body: %v", loc, err)
+		response.ErrWithContent(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	h.log.Debugf("%s: received request: %+v", loc, req)
+	h.log.Debugf("%s: received encrypted request: %+v", loc, encryptedReq)
+
+	decrypted, err := h.crypto.DecryptData(encryptedReq, r.Host)
+	if err != nil {
+		h.log.Errorf("%s: failed to decrypt data: %v", loc, err)
+		response.ErrCannotDecryptData(w)
+		return
+	}
+
+	contentList, ok := decrypted.Content.([]interface{})
+	if !ok || len(contentList) == 0 {
+		h.log.Errorf("%s: unexpected decrypted content format: %+v", loc, decrypted.Content)
+		response.ErrWithContent(w, http.StatusBadRequest, "invalid decrypted content")
+		return
+	}
+
+	userJSONStr, ok := contentList[0].(string)
+	if !ok {
+		h.log.Errorf("%s: decrypted content[0] is not a string", loc)
+		response.ErrWithContent(w, http.StatusBadRequest, "invalid user data format")
+		return
+	}
+
+	userJSONBytes, err := base64.StdEncoding.DecodeString(userJSONStr)
+	if err != nil {
+		h.log.Errorf("%s: failed to base64 decode user data: %v", loc, err)
+		response.ErrWithContent(w, http.StatusBadRequest, "invalid base64 user data")
+		return
+	}
+
+	var req map[string]interface{}
+	if err := lib.ReadJSONFromBytes(userJSONBytes, &req); err != nil {
+		h.log.Errorf("%s: failed to parse user JSON: %v", loc, err)
+		response.ErrWithContent(w, http.StatusBadRequest, "invalid user json")
+		return
+	}
+
+	h.log.Debugf("%s: parsed user data: %+v", loc, req)
 
 	login, _ := req["login"].(string)
 	password, _ := req["password"].(string)
@@ -166,16 +202,15 @@ func (h *usersHandler) Create(
 	}
 
 	h.log.Infof("%s: user created successfully: %s", loc, login)
-	response.OkWithMessage(w, "User created successfully")
+	response.OkWithContent(w, "User created successfully")
 }
 
-// GetOne returns a single user by ID (admin only)
+// GetOne returns a single user by ID or login (admin only)
 func (h *usersHandler) GetOne(
 	w http.ResponseWriter, r *http.Request,
 ) {
 	loc := GLOC_USRS + "GetOne()"
 	h.log.Infof("%s: handler called", loc)
-	h.log.Debugf("%s: request: %+v", loc, r)
 
 	// Check access
 	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
@@ -198,20 +233,26 @@ func (h *usersHandler) GetOne(
 		return
 	}
 
+	var user models.User
+
 	// Transform ID to int
 	id, err := lib.ParseID(idStr)
-	if err != nil {
-		h.log.Errorf("%s: invalid user ID: %v", loc, err)
-		response.ErrInvalidID(w, idStr)
-		return
-	}
-
 	// Get user from DB
-	user, err := h.st.GetUserByID(id)
-	if err != nil {
-		h.log.Errorf("%s: failed to get user by ID %d: %v", loc, id, err)
-		response.ErrCannotGetWithID(w, idStr)
-		return
+	if err == nil {
+		user, err = h.st.GetUserByID(id)
+		if err != nil {
+			h.log.Errorf("%s: failed to get user by ID %d: %v", loc, id, err)
+			response.ErrCannotGetWithID(w, idStr)
+			return
+		}
+	} else {
+		h.log.Debugf("%s: '%s' is not numeric, searching by login", loc, idStr)
+		user, err = h.st.GetUserByLogin(idStr)
+		if err != nil {
+			h.log.Errorf("%s: failed to get user by login '%s': %v", loc, idStr, err)
+			response.ErrCannotGetWithID(w, idStr)
+			return
+		}
 	}
 
 	h.log.Debugf("%s: successfully retrieved user: %+v", loc, user)

@@ -198,3 +198,34 @@ func augmentRequestBody(r *http.Request) error {
 
 	return nil
 }
+
+// DecryptData sends a map of encrypted data to the decryption service.
+// Use this when you already have parsed request body (not a raw *http.Request).
+func (c *CryptoClient) DecryptData(data map[string]interface{}, from string) (response.ResponseWithContent, error) {
+	data["from"] = from
+
+	bodyBytes, err := json.Marshal(data)
+	if err != nil {
+		return response.EmptyWithContent, err
+	}
+
+	resp, err := c.Client.Post(
+		PROTO+c.DecryptEndpoint,
+		"application/json",
+		bytes.NewReader(bodyBytes),
+	)
+	if err != nil {
+		return response.EmptyWithContent, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return response.EmptyWithContent, errBadStatusCode(resp.StatusCode)
+	}
+
+	var res response.ResponseWithContent
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return response.EmptyWithContent, err
+	}
+
+	return res, nil
+}
