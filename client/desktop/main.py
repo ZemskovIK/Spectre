@@ -20,7 +20,7 @@ class MilitaryLettersApp:
         x = (screen_width - window_width) // 2
         y = (screen_height - window_height) // 2
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        icon_path = os.path.join(os.path.dirname(__file__), "images/letters.png")
+        icon_path = resource_path("letters.png", folder="images")
         self.img = PhotoImage(file=icon_path)
         self.root.iconphoto(True, self.img)
         
@@ -112,7 +112,7 @@ class MilitaryLettersApp:
                             style='TButton', width=15)
         login_btn.grid(row=3, column=1, pady=(15, 5), sticky=E)
         
-        version_label = ttk.Label(main_frame, text="Версия 3.1", 
+        version_label = ttk.Label(main_frame, text="Версия 3.2", 
                                 foreground='gray', font=('Arial', 8))
         version_label.place(relx=1.0, rely=1.0, anchor='se', x=-10, y=-10)
         
