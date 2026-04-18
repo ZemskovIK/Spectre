@@ -258,3 +258,44 @@ func (h *usersHandler) GetOne(
 	h.log.Debugf("%s: successfully retrieved user: %+v", loc, user)
 	response.OkWithContent(w, user)
 }
+
+func (h *usersHandler) Delete(
+	w http.ResponseWriter, r *http.Request,
+) {
+	loc := GLOC_USRS + "Delete()"
+	h.log.Infof("%s: handler called", loc)
+
+	usrAccess, ok := lib.FetchAccessLevelFromCtx(r.Context())
+	if !ok {
+		h.log.Errorf("%s: failed to fetch access level from context", loc)
+		response.ErrWithContent(w, http.StatusInternalServerError, "cannot get access level")
+		return
+	}
+	if usrAccess < lib.ADMIN_ALEVEL {
+		h.log.Warnf("%s: blocked, access: %d, required: %d", loc, usrAccess, lib.ADMIN_ALEVEL)
+		response.ErrWithContent(w, http.StatusForbidden, "admin access required")
+		return
+	}
+
+	idStr := r.URL.Path[len(api.USER_POINT):]
+	if idStr == "" {
+		response.ErrInvalidID(w, idStr)
+		return
+	}
+
+	id, err := lib.ParseID(idStr)
+	if err != nil {
+		h.log.Errorf("%s: invalid user ID: %v", loc, err)
+		response.ErrInvalidID(w, idStr)
+		return
+	}
+
+	if err := h.st.DeleteUser(id); err != nil {
+		h.log.Errorf("%s: failed to delete user %d: %v", loc, id, err)
+		response.ErrWithContent(w, http.StatusInternalServerError, "cannot delete user")
+		return
+	}
+
+	h.log.Infof("%s: user deleted successfully: %d", loc, id)
+	response.OkWithContent(w, "User deleted successfully")
+}

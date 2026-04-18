@@ -174,10 +174,10 @@ func (s *sqliteDB) GetUserByID(id int) (models.User, error) {
 		&usr.AccessLevel,
 	); err != nil {
 		if err == sql.ErrNoRows {
-			s.log.Warnf("%s: letter not found with id %d", loc, id)
+			s.log.Warnf("%s: user not found with id %d", loc, id)
 			return models.User{}, errLetterNotFound(id)
 		}
-		s.log.Errorf("%s: error retrieving letter with id %d: %v", loc, id, err)
+		s.log.Errorf("%s: error retrieving user with id %d: %v", loc, id, err)
 		return models.User{}, errCannotGetWithID(id, err)
 	}
 
