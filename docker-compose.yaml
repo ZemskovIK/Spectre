@@ -8,7 +8,7 @@ services:
       - .env
     ports:
       - "${CRYPTO_PORT}:${CRYPTO_PORT}"
-    command: sh -c "gunicorn --bind 0.0.0.0:${CRYPTO_PORT} server:app --workers 3"
+    command: sh -c "gunicorn --bind 0.0.0.0:${CRYPTO_PORT} server:app --workers 1"
     restart: always
     networks:
       custom_network:
