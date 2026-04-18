@@ -194,10 +194,6 @@ func OkWithMessage(w http.ResponseWriter, message string) {
 	respondWithJSON(w, http.StatusOK, map[string]string{"message": message})
 }
 
-func ReadJSONFromBytes(data []byte, target interface{}) error {
-	return json.Unmarshal(data, target)
-}
-
 func respondWithError(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
