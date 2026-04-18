@@ -243,14 +243,36 @@ python main.py
 Структура проекта:
 ```
 desktop/
-  ├── dist/           # Собранные исполняемые файлы
-  │   └── spectre.exe
+  ├── dist/                # Собранные исполняемые файлы
+  │   ├── spectre.exe      # Windows
+  │   └── spectre-linux    # Linux
   ├── images/
   │   ├── letters.png      # Иконка приложения
   │   ├── letters_icon.png # Иконка для меню
   │   └── users_icon.png   # Иконка для меню
-  ├── main.py         # Основной код клиента
-  ├── crypto.py       # Криптографические функции
-  ├── pyi_resource.py  # утилита для работы с путями
-  └── README.md       # Документация
+  ├── Dockerfile.build     # сборка Linux бинарника
+  ├── main.py              # Основной код клиента
+  ├── crypto.py            # Криптографические функции
+  ├── pyi_resource.py      # утилита для работы с путями
+  └── README.md            # Документация
 ```
+
+## 📦 Сборка исполняемого файла
+
+### Windows:
+```cmd
+pyinstaller --onefile --windowed --add-data "images;images" --name spectre main.py
+```
+
+### Linux (через Docker):
+```bash
+# Сборка образа
+docker build -f Dockerfile.build -t spectre-builder .
+
+# Извлечение бинарника
+docker create --name tmp spectre-builder
+docker cp tmp:/app/dist/spectre ./dist/spectre-linux
+docker rm tmp
+```
+
+Готовые бинарники находятся в папке `dist/`
