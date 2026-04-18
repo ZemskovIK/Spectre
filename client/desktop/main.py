@@ -112,7 +112,7 @@ class MilitaryLettersApp:
                             style='TButton', width=15)
         login_btn.grid(row=3, column=1, pady=(15, 5), sticky=E)
         
-        version_label = ttk.Label(main_frame, text="Версия 3.2", 
+        version_label = ttk.Label(main_frame, text="Версия 3.3", 
                                 foreground='gray', font=('Arial', 8))
         version_label.place(relx=1.0, rely=1.0, anchor='se', x=-10, y=-10)
         
@@ -123,10 +123,7 @@ class MilitaryLettersApp:
         password = self.password_entry.get()
         
         if not login or not password:
-            error_msg = "Введите логин и пароль"
-            messagebox.showerror("Ошибка", error_msg)
-            error_msg = "Введите логин и пароль"
-            messagebox.showerror("Ошибка", error_msg)
+            messagebox.showerror("Ошибка", "Введите логин и пароль")
             return
         
         try:
@@ -140,52 +137,18 @@ class MilitaryLettersApp:
                 self.current_user = login
                 
                 if not self.token:
-                    error_msg = "Токен отсутствует в ответе сервера"
-                    messagebox.showerror("Ошибка", error_msg)
+                    messagebox.showerror("Ошибка", "Токен отсутствует в ответе сервера")
                     return
                 
                 try:
-                    unverified_payload = jwt.decode(
-                        self.token,
-                        options={"verify_signature": False},
-                        algorithms=["HS256"]
-                    )
-                    
-                    if "sub" in unverified_payload:
-                        if not isinstance(unverified_payload["sub"], str):
-                            unverified_payload["sub"] = str(unverified_payload["sub"])
-                    
                     payload = jwt.decode(
                         self.token,
                         "test_secret",
                         algorithms=["HS256"],
                         options={"verify_sub": False}
                     )
-                    
-                    unverified_payload = jwt.decode(
-                        self.token,
-                        options={"verify_signature": False},
-                        algorithms=["HS256"]
-                    )
-                    
-                    if "sub" in unverified_payload:
-                        if not isinstance(unverified_payload["sub"], str):
-                            unverified_payload["sub"] = str(unverified_payload["sub"])
-                    
-                    payload = jwt.decode(
-                        self.token,
-                        "test_secret",
-                        algorithms=["HS256"],
-                        options={"verify_sub": False}
-                    )
-                    
                     self.user_role = payload.get("role", 1)
-                    
                 except Exception as e:
-                    error_msg = f"Ошибка декодирования токена: {str(e)}"
-                    
-                except Exception as e:
-                    error_msg = f"Ошибка декодирования токена: {str(e)}"
                     self.user_role = 1
                     
                 self.show_main_menu()
@@ -193,20 +156,10 @@ class MilitaryLettersApp:
                 error_msg = response.json().get("message", "Неверный логин или пароль")
                 messagebox.showerror("Ошибка", error_msg)
                 
-                error_msg = response.json().get("message", "Неверный логин или пароль")
-                messagebox.showerror("Ошибка", error_msg)
-                
         except requests.exceptions.RequestException as e:
-            error_msg = f"Ошибка подключения: {str(e)}"
-            messagebox.showerror("Ошибка", error_msg)
+            messagebox.showerror("Ошибка", f"Ошибка подключения: {str(e)}")
         except Exception as e:
-            error_msg = f"Неожиданная ошибка: {str(e)}"
-            messagebox.showerror("Ошибка", error_msg)
-            error_msg = f"Ошибка подключения: {str(e)}"
-            messagebox.showerror("Ошибка", error_msg)
-        except Exception as e:
-            error_msg = f"Неожиданная ошибка: {str(e)}"
-            messagebox.showerror("Ошибка", error_msg)
+            messagebox.showerror("Ошибка", f"Неожиданная ошибка: {str(e)}")
     
     def show_main_menu(self):
         for widget in self.root.winfo_children():
@@ -582,13 +535,14 @@ class MilitaryLettersApp:
             "GET", 
             f"{self.api_url}/api/letters/{letter_id}"
         )
-        response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
-        
-        if response.status_code != 200:
-            error_msg = response.json().get("error", "Не удалось получить список писем")
-            messagebox.showerror("Ошибка", error_msg)
+        if response is None:
             return
-        
+            
+        if response.status_code != 200:
+            messagebox.showerror("Ошибка", "Письмо с данным ID не найдено")
+            return
+
+        response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
         bytes_data = base64.b64decode(response_data.get("content")[0])
         json_data = json.loads(bytes_data.decode('utf-8'))
         
@@ -631,10 +585,19 @@ class MilitaryLettersApp:
                 "GET", 
                 f"{self.api_url}/api/letters"
             )
-            response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
+            
+            response_json = response.json()
+        
+            if not response_json.get("iv"):
+                self.results_body.config(state=NORMAL)
+                self.results_body.delete("1.0", END)
+                self.results_body.insert(END, "Писем нет в базе")
+                self.results_body.config(state=DISABLED)
+                return
 
+            response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
             result = []
-            for item in response_data.get("content"):
+            for item in response_data.get("content", []):
                 bytes_data = base64.b64decode(item)
                 json_data = json.loads(bytes_data.decode('utf-8'))
                 result.append(json_data)
@@ -642,27 +605,23 @@ class MilitaryLettersApp:
             self.results_body.config(state=NORMAL)
             self.results_body.delete("1.0", END)
             
-            if response.status_code == 200 and response_data.get("content"):                
-                if result:
-                    for letter in result:
-                        formatted_letter = (
-                            f"ID: {letter.get('id', 'N/A')}\n"
-                            f"Автор: {letter.get('author', 'N/A')}\n"
-                            f"Дата: {letter.get('found_at', 'N/A')[:10]}\n"
-                            f"Место: {letter.get('found_in', 'N/A')}\n"
-                            f"Текст: {letter.get('body', 'N/A')}\n"
-                            f"{'-'*30}\n"
-                        )
-                        self.results_body.insert(END, formatted_letter)
-                else:
-                    self.results_body.insert(END, "В базе нет писем")
-            # else:
-            #     error_msg = letters.get("error", "Неизвестная ошибка")
-            #     self.results_body.insert(END, f"Ошибка: {error_msg}")
+            if result:
+                for letter in result:
+                    formatted_letter = (
+                        f"ID: {letter.get('id', 'N/A')}\n"
+                        f"Автор: {letter.get('author', 'N/A')}\n"
+                        f"Дата: {letter.get('found_at', 'N/A')[:10]}\n"
+                        f"Место: {letter.get('found_in', 'N/A')}\n"
+                        f"Текст: {letter.get('body', 'N/A')}\n"
+                        f"{'-'*30}\n"
+                    )
+                    self.results_body.insert(END, formatted_letter)
+            else:
+                self.results_body.insert(END, "Писем нет в базе")
                 
             self.results_body.config(state=DISABLED)
-        except requests.exceptions.RequestException as e:
-            messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
  
     def fetch_letter_body(self): # GET /api/letters/{letter_id}
         letter_id = self.update_id.get()
@@ -675,27 +634,31 @@ class MilitaryLettersApp:
                 "GET", 
                 f"{self.api_url}/api/letters/{letter_id}"
             )
-            response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
-            if response.status_code == 200:
-                bytes_data = base64.b64decode(response_data.get("content")[0])
-                letter_data = json.loads(bytes_data.decode('utf-8'))
+            if response is None:
+                return
+                
+            if response.status_code != 200:
+                messagebox.showerror("Ошибка", "Письмо с данным ID не найдено")
+                return
 
-                if letter_data:    
-                    self.update_author.delete(0, END)
-                    self.update_body.delete("1.0", END)
-                    self.update_found_at.delete(0, END)
-                    self.update_found_in.delete(0, END)
-                    
-                    self.update_author.insert(0, letter_data.get('author', ''))
-                    self.update_body.insert("1.0", letter_data.get('body', ''))
-                    self.update_found_at.insert(0, letter_data.get('found_at', '')[:10])
-                    self.update_found_in.insert(0, letter_data.get('found_in', ''))
-                else:
-                    messagebox.showerror("Ошибка", "Данные письма не получены")
+            response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
+            bytes_data = base64.b64decode(response_data.get("content")[0])
+            letter_data = json.loads(bytes_data.decode('utf-8'))
+
+            if letter_data:    
+                self.update_author.delete(0, END)
+                self.update_body.delete("1.0", END)
+                self.update_found_at.delete(0, END)
+                self.update_found_in.delete(0, END)
+                
+                self.update_author.insert(0, letter_data.get('author', ''))
+                self.update_body.insert("1.0", letter_data.get('body', ''))
+                self.update_found_at.insert(0, letter_data.get('found_at', '')[:10])
+                self.update_found_in.insert(0, letter_data.get('found_in', ''))
             else:
-                messagebox.showinfo("Информация", "Письмо с данным ID не найдено")
-        except requests.exceptions.RequestException as e:
-            messagebox.showerror("Ошибка", f"Не удалось подключиться к серверу: {str(e)}")
+                messagebox.showerror("Ошибка", "Данные письма не получены")
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
     
     def submit_update(self): # PUT /api/letters/{letter_id}
         letter_id = self.update_id.get()
@@ -871,7 +834,13 @@ class MilitaryLettersApp:
             "DELETE", 
             f"{self.api_url}/api/users/{user_id}"
         )
-        return response.json() if response else None
+        if response is None:
+            return None
+        try:
+            return response.json()
+        except Exception as e:
+            print(f"DEBUG delete_user json error: {e}")
+            return {"error": response.text}
     
     def create_users_tab(self):
         frame = ttk.Frame(self.users_tab)
