@@ -89,7 +89,7 @@
 ├── client  
 │   ├── desktop
 │   │   ├── dist
-│   │   │   └── main.exe  # готовый исполняемый файл для Windows 
+│   │   │   └── spectre.exe  # готовый исполняемый файл для Windows 
 │   │   ├── main.py
 │   │   └── README.md  
 │   └── web

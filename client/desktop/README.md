@@ -245,7 +245,7 @@ python main.py
 ```
 desktop/
   ├── dist/           # Собранные исполняемые файлы
-  │   └── main.exe
+  │   └── spectre.exe
   ├── letters.png     # Иконка приложения
   ├── letters_icon.png # Иконка для меню
   ├── users_icon.png   # Иконка для меню
