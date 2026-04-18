@@ -112,7 +112,7 @@ class MilitaryLettersApp:
                             style='TButton', width=15)
         login_btn.grid(row=3, column=1, pady=(15, 5), sticky=E)
         
-        version_label = ttk.Label(main_frame, text="Версия 3.3", 
+        version_label = ttk.Label(main_frame, text="Версия 3.4", 
                                 foreground='gray', font=('Arial', 8))
         version_label.place(relx=1.0, rely=1.0, anchor='se', x=-10, y=-10)
         
@@ -395,9 +395,10 @@ class MilitaryLettersApp:
         self.create_body = Text(frame, width=50, height=10)
         self.create_body.grid(row=1, column=1, pady=5, padx=5)
         
-        ttk.Label(frame, text="Дата находки (ГГГГ-ММ-ДД):").grid(row=2, column=0, sticky=W, pady=5)
+        ttk.Label(frame, text="Дата находки (ДД.ММ.ГГГГ):").grid(row=2, column=0, sticky=W, pady=5)
         self.create_found_at = ttk.Entry(frame, width=50)
         self.create_found_at.grid(row=2, column=1, pady=5, padx=5)
+        self.setup_date_entry(self.create_found_at)
         
         ttk.Label(frame, text="Место находки:").grid(row=3, column=0, sticky=W, pady=5)
         self.create_found_in = ttk.Entry(frame, width=50)
@@ -444,9 +445,10 @@ class MilitaryLettersApp:
         self.update_body = Text(frame, width=50, height=10)
         self.update_body.grid(row=2, column=1, pady=5, padx=5)
         
-        ttk.Label(frame, text="Дата находки (ГГГГ-ММ-ДД):").grid(row=3, column=0, sticky=W, pady=5)
+        ttk.Label(frame, text="Дата находки (ДД.ММ.ГГГГ):").grid(row=3, column=0, sticky=W, pady=5)
         self.update_found_at = ttk.Entry(frame, width=50)
         self.update_found_at.grid(row=3, column=1, pady=5, padx=5)
+        self.setup_date_entry(self.update_found_at)
         
         ttk.Label(frame, text="Место находки:").grid(row=4, column=0, sticky=W, pady=5)
         self.update_found_in = ttk.Entry(frame, width=50)
@@ -472,10 +474,15 @@ class MilitaryLettersApp:
         self.delete_status.grid(row=2, column=0, columnspan=3, pady=5)
     
     def submit_create(self): # POST /api/letters
+        date_str = self.parse_date(self.create_found_at.get())
+        if not date_str:
+            messagebox.showerror("Ошибка", "Неверный формат даты. Используйте ДД.ММ.ГГГГ")
+            return
+        
         content = {
             "author": self.create_author.get(),
             "body": self.create_body.get("1.0", END).strip(),
-            "found_at": f"{self.create_found_at.get()}T00:00:00Z",
+            "found_at": f"{date_str}T00:00:00Z",
             "found_in": self.create_found_in.get()
         }
         
@@ -666,10 +673,15 @@ class MilitaryLettersApp:
             messagebox.showerror("Ошибка", "Введите ID письма")
             return
         
+        date_str = self.parse_date(self.update_found_at.get())
+        if not date_str:
+            messagebox.showerror("Ошибка", "Неверный формат даты. Используйте ГГГГ-ММ-ДД или ДД.ММ.ГГГГ")
+            return
+
         content = {
             "author": self.update_author.get(),
             "body": self.update_body.get("1.0", END).strip(),
-            "found_at": f"{self.update_found_at.get()}T00:00:00Z",
+            "found_at": f"{date_str}T00:00:00Z",
             "found_in": self.update_found_in.get()
         }
         
@@ -961,6 +973,47 @@ class MilitaryLettersApp:
                 messagebox.showerror("Ошибка", error_msg)
         except Exception as e:
             messagebox.showerror("Ошибка", f"Произошла ошибка: {str(e)}")
+
+    def parse_date(self, date_str):
+        import re
+        date_str = date_str.strip()
+        
+        # ГГГГ-ММ-ДД (с сервера)
+        if re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
+            return date_str
+        
+        # ДД.ММ.ГГГГ (вводит пользователь)
+        m = re.match(r'^(\d{2})\.(\d{2})\.(\d{4})$', date_str)
+        if m:
+            return f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
+        
+        return None
+
+    def setup_date_entry(self, entry):
+        def on_key(e):
+            if e.keysym in ('BackSpace', 'Delete', 'Left', 'Right', 'Tab'):
+                return
+            
+            entry.after(1, format_date)
+        
+        def format_date():
+            val = entry.get()
+            digits = ''.join(c for c in val if c.isdigit())[:8]
+            
+            if len(digits) <= 2:
+                new_val = digits
+            elif len(digits) <= 4:
+                new_val = f"{digits[:2]}.{digits[2:]}"
+            else:
+                new_val = f"{digits[:2]}.{digits[2:4]}.{digits[4:]}"
+            
+            if new_val != val:
+                pos = entry.index(INSERT)
+                entry.delete(0, END)
+                entry.insert(0, new_val)
+                entry.icursor(min(pos + 1, len(new_val)) if len(new_val) > len(val) else pos)
+        
+        entry.bind('<Key>', on_key)
 
 def decrypt(data, aes_key, hmac_key):
     print(f"\nmain.py | decrypt() data: {data}, {type(data)}\n")
