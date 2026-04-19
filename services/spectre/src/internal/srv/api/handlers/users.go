@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"spectre/internal/models"
 	"spectre/internal/srv/api"
@@ -250,7 +251,7 @@ func (h *usersHandler) GetOne(
 		user, err = h.st.GetUserByLogin(idStr)
 		if err != nil {
 			h.log.Errorf("%s: failed to get user by login '%s': %v", loc, idStr, err)
-			response.ErrCannotGetWithID(w, idStr)
+			response.ErrWithContent(w, http.StatusNotFound, fmt.Sprintf("user with login '%s' not found", idStr))
 			return
 		}
 	}

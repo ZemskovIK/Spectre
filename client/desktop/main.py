@@ -563,19 +563,23 @@ class MilitaryLettersApp:
             "GET", 
             f"{self.api_url}/api/letters"
         )
-        response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
-        
-        if response.status_code != 200:
-            error_msg = response.json().get("error", "Не удалось получить список писем")
-            messagebox.showerror("Ошибка", error_msg)
+        if response is None:
             return
+
+        response_json = response.json()
+        
+        if not response_json.get("iv"):
+            messagebox.showinfo("Информация", "Писем нет в базе")
+            return
+
+        response_data = decrypt(response_json, self.aes_key, self.hmac_key)
         
         all_letters = []
-        for item in response_data.get("content"):
-                bytes_data = base64.b64decode(item)
-                json_data = json.loads(bytes_data.decode('utf-8'))
-                all_letters.append(json_data)
-                                
+        for item in response_data.get("content", []):
+            bytes_data = base64.b64decode(item)
+            json_data = json.loads(bytes_data.decode('utf-8'))
+            all_letters.append(json_data)
+        
         results = [
             letter for letter in all_letters 
             if str(letter.get("author", "")).lower() == author_name.lower()
