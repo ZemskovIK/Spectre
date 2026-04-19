@@ -89,8 +89,13 @@
 ├── client  
 │   ├── desktop
 │   │   ├── dist
-│   │   │   └── spectre.exe  # готовый исполняемый файл для Windows 
-│   │   ├── main.py
+│   │   │   ├── spectre.exe  # готовый исполняемый файл для Windows 
+│   │   │   └── spectre-linux  # готовый исполняемый файл для Linux
+│   │   ├── images
+│   │   ├── crypto.py  # Криптографические функции
+│   │   ├── Dockerfile.build  # сборка Linux бинарника
+│   │   ├── pyi_resource.py  # утилита для работы с путями
+│   │   ├── main.py  # Основной код приложения
 │   │   └── README.md  
 │   └── web
 │       ├── index.html  # базовая страница
