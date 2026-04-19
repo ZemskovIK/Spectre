@@ -112,7 +112,7 @@ class MilitaryLettersApp:
                             style='TButton', width=15)
         login_btn.grid(row=3, column=1, pady=(15, 5), sticky=E)
         
-        version_label = ttk.Label(main_frame, text="Версия 3.4", 
+        version_label = ttk.Label(main_frame, text="Версия 3.5", 
                                 foreground='gray', font=('Arial', 8))
         version_label.place(relx=1.0, rely=1.0, anchor='se', x=-10, y=-10)
         
@@ -545,18 +545,25 @@ class MilitaryLettersApp:
         if response is None:
             return
             
+        self.results_body.config(state=NORMAL)
+        self.results_body.delete("1.0", END)
+        
         if response.status_code != 200:
-            messagebox.showerror("Ошибка", "Письмо с данным ID не найдено")
+            self.results_body.insert(END, "Письмо с данным ID не найдено")
+            self.results_body.config(state=DISABLED)
             return
 
         response_data = decrypt(response.json(), self.aes_key, self.hmac_key)
         bytes_data = base64.b64decode(response_data.get("content")[0])
         json_data = json.loads(bytes_data.decode('utf-8'))
+        self.results_body.config(state=DISABLED)
         
         if json_data:
             self.display_results([json_data])
         else:
-            messagebox.showinfo("Информация", "Письмо с данным ID не найдено")
+            self.results_body.config(state=NORMAL)
+            self.results_body.insert(END, "Письмо с данным ID не найдено")
+            self.results_body.config(state=DISABLED)
 
     def _search_by_author(self, author_name):
         response = self.make_authenticated_request(
@@ -566,29 +573,31 @@ class MilitaryLettersApp:
         if response is None:
             return
 
+        self.results_body.config(state=NORMAL)
+        self.results_body.delete("1.0", END)
+
         response_json = response.json()
-        
         if not response_json.get("iv"):
-            messagebox.showinfo("Информация", "Писем нет в базе")
+            self.results_body.insert(END, "Писем нет в базе")
+            self.results_body.config(state=DISABLED)
             return
 
         response_data = decrypt(response_json, self.aes_key, self.hmac_key)
-        
         all_letters = []
         for item in response_data.get("content", []):
             bytes_data = base64.b64decode(item)
             json_data = json.loads(bytes_data.decode('utf-8'))
             all_letters.append(json_data)
         
-        results = [
-            letter for letter in all_letters 
-            if str(letter.get("author", "")).lower() == author_name.lower()
-        ]
+        results = [l for l in all_letters if str(l.get("author", "")).lower() == author_name.lower()]
+        self.results_body.config(state=DISABLED)
         
         if results:
             self.display_results(results)
         else:
-            messagebox.showinfo("Информация", "Письма данного автора не найдены")
+            self.results_body.config(state=NORMAL)
+            self.results_body.insert(END, "Письма данного автора не найдены")
+            self.results_body.config(state=DISABLED)
 
     def get_all_letters(self): # GET /api/letters
         try:
@@ -913,24 +922,23 @@ class MilitaryLettersApp:
                 return
                 
             response_data = response.json()
+            self.user_info_text.config(state=NORMAL)
+            self.user_info_text.delete("1.0", END)
             
             if response.status_code != 200 or response_data.get("error"):
-                error_msg = response_data.get("error", "Пользователь не найден")
-                messagebox.showerror("Ошибка", error_msg)
+                self.user_info_text.insert(END, "Пользователь не найден")
+                self.user_info_text.config(state=DISABLED)
                 return
             
             user = response_data.get("content")
             if not user:
-                messagebox.showinfo("Информация", "Пользователь не найден")
-                return
-                
-            self.user_info_text.config(state=NORMAL)
-            self.user_info_text.delete("1.0", END)
-            self.user_info_text.insert(END, 
-                f"ID: {user.get('id', 'N/A')}\n"
-                f"Логин: {user.get('login', 'N/A')}\n"
-                f"Уровень доступа: {user.get('access_level', 'N/A')}\n"
-            )
+                self.user_info_text.insert(END, "Пользователь не найден")
+            else:
+                self.user_info_text.insert(END,
+                    f"ID: {user.get('id', 'N/A')}\n"
+                    f"Логин: {user.get('login', 'N/A')}\n"
+                    f"Уровень доступа: {user.get('access_level', 'N/A')}\n"
+                )
             self.user_info_text.config(state=DISABLED)
                 
         except Exception as e:
